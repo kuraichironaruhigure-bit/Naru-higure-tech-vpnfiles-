@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090909">
+  <title>NARU HIGURE VPN — Community</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="backdrop"></div>
+  <header class="topbar">
+    <a class="brand" href="#"><span class="brand-mark">NH</span><span>NARU <b>HIGURE</b><small>VPN COMMUNITY</small></span></a>
+    <nav><a href="#files">Downloads</a><a href="#upload">Upload</a><button id="adminOpen" class="nav-admin">Admin</button></nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><i></i> COMMUNITY CONFIGURATION HUB</div>
+        <h1>SHARE YOUR<br><em>CONNECTION.</em></h1>
+        <p>Upload VPN configuration files, share useful setups, and discover community uploads. Every file is checked by an administrator before it goes public.</p>
+        <div class="hero-actions"><a class="button red" href="#files">Explore files</a><a class="button outline" href="#upload">Upload a file</a></div>
+        <div class="hero-note"><span class="pulse"></span> PUBLIC DOWNLOADS · ADMIN-APPROVED FILES</div>
+      </div>
+      <div class="hero-art" aria-label="Illustration of a hooded anonymous hacker with their face hidden">
+        <div class="red-orbit orbit-one"></div><div class="red-orbit orbit-two"></div>
+        <svg viewBox="0 0 440 470" role="img" aria-label="Faceless hooded hacker illustration">
+          <defs>
+            <linearGradient id="hood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3c3c3c"/><stop offset=".55" stop-color="#111"/><stop offset="1" stop-color="#050505"/></linearGradient>
+            <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#242424"/><stop offset="1" stop-color="#080808"/></linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="7"/></filter>
+          </defs>
+          <ellipse cx="222" cy="442" rx="155" ry="17" fill="#e21b2d" opacity=".22" filter="url(#glow)"/>
+          <path d="M80 430 Q92 292 151 249 L183 225 L263 225 L299 250 Q359 298 370 430Z" fill="url(#coat)" stroke="#4a4a4a" stroke-width="2"/>
+          <path d="M112 430 Q125 300 166 270 L211 322 L264 269 Q319 300 340 430Z" fill="#111" stroke="#333" stroke-width="2"/>
+          <path d="M109 240 Q89 94 174 39 Q219 8 272 42 Q358 91 329 241 L290 297 Q255 327 218 329 Q169 324 139 291Z" fill="url(#hood)" stroke="#555" stroke-width="3"/>
+          <path d="M144 178 Q143 78 218 60 Q294 75 297 178 L278 246 Q253 275 219 278 Q181 271 160 245Z" fill="#050505"/>
+          <path d="M151 171 Q218 137 291 171 L278 221 Q250 250 218 253 Q180 247 163 220Z" fill="#090909"/>
+          <path d="M145 173 Q218 139 295 173" fill="none" stroke="#a70e1d" stroke-width="4" opacity=".9"/>
+          <path d="M175 262 L218 319 L264 261" fill="none" stroke="#6a111a" stroke-width="3"/>
+          <path d="M216 322 L216 429" stroke="#333" stroke-width="2"/>
+          <path d="M110 305 L70 420 M328 305 L370 420" stroke="#333" stroke-width="4"/>
+          <circle cx="218" cy="174" r="95" fill="#e21b2d" opacity=".08" filter="url(#glow)"/>
+        </svg>
+        <div class="art-label">ANONYMOUS <b>BY DESIGN</b></div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div><strong id="approvedCount">—</strong><span>APPROVED FILES</span></div>
+      <div><strong>24/7</strong><span>COMMUNITY ACCESS</span></div>
+      <div><strong>100%</strong><span>ADMIN REVIEW</span></div>
+    </section>
+
+    <section id="files" class="section">
+      <div class="section-head"><div><div class="eyebrow">COMMUNITY LIBRARY</div><h2>Available <em>files</em></h2></div><input id="search" class="search" type="search" placeholder="Search files…"></div>
+      <div id="fileList" class="file-grid"><div class="empty">Connect the website to Supabase to load approved files.</div></div>
+    </section>
+
+    <section id="upload" class="section upload-section">
+      <div class="upload-copy"><div class="eyebrow">CONTRIBUTE TO THE COMMUNITY</div><h2>Share a <em>configuration.</em></h2><p>Choose a VPN configuration file and submit it for review. It will only appear in the public library after administrator approval.</p><p class="small">Accepted: .json, .ovpn, .conf, .npv, .npvt, .txt · Maximum 20 MB</p></div>
+      <form id="uploadForm" class="upload-card">
+        <label>DISPLAY NAME<input id="displayName" maxlength="40" placeholder="e.g. My V2Ray setup" required></label>
+        <label>SHORT DESCRIPTION<textarea id="description" maxlength="180" placeholder="What app or protocol is this for?"></textarea></label>
+        <label class="file-pick">SELECT VPN FILE<input id="vpnFile" type="file" accept=".json,.ovpn,.conf,.npv,.npvt,.txt" required><span id="fileName">Choose a file (20 MB max)</span></label>
+        <button class="button red full" type="submit">Submit for approval</button>
+        <div id="uploadMessage" class="form-message" role="status"></div>
+      </form>
+    </section>
+  </main>
+
+  <footer><span class="brand-foot">NARU HIGURE VPN</span><span>Share responsibly. Only upload files you have permission to share.</span></footer>
+
+  <dialog id="adminDialog">
+    <form method="dialog" class="dialog-head"><div><div class="eyebrow">PRIVATE CONTROL PANEL</div><h2>Admin <em>access</em></h2></div><button class="close" aria-label="Close">×</button></form>
+    <div id="loginPanel">
+      <p class="small">Sign in with the administrator account configured for this website.</p>
+      <label>EMAIL<input id="adminEmail" type="email" autocomplete="username" required></label>
+      <label>PASSWORD<input id="adminPassword" type="password" autocomplete="current-password" required></label>
+      <button id="loginButton" class="button red full" type="button">Sign in</button>
+      <div id="adminMessage" class="form-message"></div>
+    </div>
+    <div id="reviewPanel" hidden>
+      <div class="review-top"><span>Pending submissions</span><button id="logoutButton" class="button outline small-button" type="button">Sign out</button></div>
+      <div id="pendingList" class="pending-list">Loading…</div>
+    </div>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>
