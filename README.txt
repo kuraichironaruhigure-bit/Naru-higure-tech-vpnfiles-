@@ -1,44 +1,39 @@
-# NARU HIGURE VPN — website starter
+NARU HIGURE VPN — WEBSITE STARTER
 
-A dark black/red mobile-friendly VPN configuration sharing website. Anyone can submit a file; submissions stay pending until the administrator approves them.
+Included files:
+- index.html: website page
+- style.css: black/red mobile-friendly design
+- app.js: upload of any file type (10 MB limit), approved-file list, admin sign-in and review interface
+- supabase-setup.sql: database/storage setup
+- README.txt: these instructions
 
-## Important
-This is a deployable starter project, not a website already published on the internet. You must connect a Supabase project and deploy the files before people can use it.
+IMPORTANT
+This is a starter project, not a hosted website. GitHub Pages hosts the page, but Supabase must be configured for submissions and moderation to work.
 
-## 1. Create the database and file storage
-1. Create a project at https://supabase.com/ (use the free tier if available).
-2. Open **SQL Editor** in your Supabase dashboard.
-3. Copy all of `supabase-setup.sql` into a new query and run it.
-4. In **Project Settings → API**, copy the Project URL and the `anon` / publishable public key.
+1) CREATE SUPABASE PROJECT
+Create a project at https://supabase.com/ and open its SQL Editor.
+Copy all of supabase-setup.sql into a new query and run it.
 
-## 2. Connect this website
-1. Open `app.js`.
-2. Replace `PASTE_YOUR_SUPABASE_PROJECT_URL` with your Project URL.
-3. Replace `PASTE_YOUR_SUPABASE_ANON_KEY` with your public anon/publishable key.
-4. Save the file.
+2) CONNECT THE WEBSITE
+In Supabase open Project Settings → API. Copy the Project URL and anon/publishable public key.
+Open app.js in GitHub and replace:
+PASTE_YOUR_SUPABASE_PROJECT_URL
+PASTE_YOUR_SUPABASE_ANON_KEY
+Commit the change.
+Never use a service_role or secret key in this public website.
 
-Never put a `service_role` or secret key in website code.
+3) CREATE AN ADMIN
+Create an admin user in Supabase Authentication → Users.
+Then run this SQL, replacing the email with the admin email:
+update auth.users
+set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
+where email = 'YOUR_ADMIN_EMAIL';
+Sign in on the website using that account.
 
-## 3. Create your administrator account
-1. In Supabase, open **Authentication → Users** and create a user with your own email and a strong password.
-2. In SQL Editor, run this statement after replacing the email:
+4) PUBLISH WITH GITHUB PAGES
+In the repository open Settings → Pages.
+Choose Deploy from a branch, select main and /(root), then Save.
+Wait for GitHub Pages to publish and use the Visit site link.
 
-   `update auth.users set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb where email = 'YOUR_ADMIN_EMAIL';`
-
-3. Sign out and back in through the website's Admin button. Only this account receives the admin role.
-
-## 4. Publish it
-Upload `index.html`, `style.css`, and `app.js` to a static host such as GitHub Pages, Cloudflare Pages, or Netlify. Keep `supabase-setup.sql` private or remove it from the public website folder after setup. The hosting service publishes the website; Supabase handles uploads, review status, and private file storage.
-
-## How the site works
-- Visitors can upload `.json`, `.ovpn`, `.conf`, `.npv`, `.npvt`, and `.txt` files up to 20 MB.
-- New submissions are pending and are not listed publicly.
-- Admin signs in and approves or rejects submissions.
-- Only approved files appear in the public library and can receive a short-lived download link.
-
-## Safety and maintenance
-- Only upload configuration files you own or have permission to share.
-- Do not upload passwords, private keys, account credentials, or other people's private configurations.
-- A file extension check is not a malware scan or a guarantee that a VPN configuration is safe or works. Review files before approval.
-- Public anonymous uploads can attract spam. For a larger public service, add CAPTCHA/rate limiting and a moderation/abuse-report process.
-- This starter does not test whether VPN servers work; it only stores and shares files.
+SECURITY / RESPONSIBLE SHARING
+The upload form accepts any file type up to 10 MB, including HA Tunnel, HTTP Custom, V2Box, NPVS, NPV, NPVT, OVPN, JSON and other formats. Acceptance does not guarantee every VPN app can open every file; formats are app-specific. Files remain pending until admin approval. Only share files you own or have permission to share. Never upload passwords, private keys, tokens or personal data. Review downloads carefully because arbitrary files can be unsafe. Public upload forms can attract spam; add rate limiting and stronger server-side moderation before opening to a large audience.

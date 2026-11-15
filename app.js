@@ -12,7 +12,7 @@ function configMessage(){return "Website files are published, but Supabase is no
 async function loadApproved(){
   const box=$("file-list");
   if(!db){box.innerHTML=`<p class="muted">${configMessage()}</p>`;return;}
-  const {data,error}=await db.from("vpn_submissions").select("id,title,uploader,file_name,created_at").eq("status","approved").order("created_at",{ascending:false});
+  const {data,error}=await db.from("vpn_submissions").select("id,title,uploader,file_name,file_path,created_at").eq("status","approved").order("created_at",{ascending:false});
   if(error){box.textContent="Could not load files: "+error.message;return;}
   box.innerHTML="";
   if(!data.length){box.innerHTML='<p class="muted">No approved files yet.</p>';return;}
@@ -27,8 +27,8 @@ async function loadApproved(){
 $("upload-form").addEventListener("submit",async e=>{
   e.preventDefault();const status=$("upload-status");
   if(!db){status.textContent=configMessage();return;}
-  const file=$("file").files[0],allowed=["json","npv","npvt","ovpn","conf","txt"],ext=file.name.split(".").pop().toLowerCase();
-  if(!allowed.includes(ext)){status.textContent="That file type is not supported.";return;}
+  const file=$("file").files[0];
+  if(!file){status.textContent="Please choose a file.";return;}
   if(file.size>10*1024*1024){status.textContent="Please choose a file smaller than 10 MB.";return;}
   status.textContent="Uploading for review…";
   const path=`${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;
