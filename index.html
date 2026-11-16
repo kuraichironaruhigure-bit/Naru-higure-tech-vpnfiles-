@@ -4,13 +4,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080808">
+<meta name="description" content="Naru Higure Tech VPN Files - share and download approved VPN configuration files.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Naru Higure">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
 <title>Naru Higure Tech VPN Files</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080808;color:white;font-family:Arial}
+body{margin:0;background:#080808;color:white;font-family:Arial,sans-serif}
 header{text-align:center;padding:25px 12px;background:#111;border-bottom:2px solid red}
-h1{margin:0;font-size:25px}h1 span{color:red}
+h1{margin:0;font-size:25px}
+h1 span{color:red}
 main{max-width:760px;margin:20px auto;padding:12px}
 .panel{background:#171717;padding:18px;border:1px solid #333;border-radius:12px;margin-bottom:18px}
 h2{font-size:20px;margin-top:0}
@@ -21,7 +31,6 @@ button{padding:11px 14px;background:#e00020;color:white;border:0;border-radius:7
 .orange{background:#a45b00}
 .status{background:#252525;padding:12px;border-radius:7px;margin-top:10px;overflow-wrap:anywhere}
 .file{padding:14px 5px;border-bottom:1px solid #444}
-.file:last-child{border:0}
 small{color:#bbb}
 .hidden{display:none}
 .adminTitle{color:#ff4444}
@@ -29,8 +38,8 @@ small{color:#bbb}
 footer{text-align:center;color:#888;padding:25px;font-size:12px}
 </style>
 </head>
-<body>
 
+<body>
 <header>
 <h1>NARU HIGURE <span>TECH</span></h1>
 <p>VPN Configuration File Sharing</p>
@@ -64,7 +73,7 @@ footer{text-align:center;color:#888;padding:25px;font-size:12px}
 <section class="panel hidden" id="adminPanel">
 <h2 class="adminTitle">ADMIN DASHBOARD</h2>
 <p>Administrator control centre</p>
-<div id="adminStats" class="status">Loading administration data...</div>
+<div id="adminStats" class="status">Loading...</div>
 <h2>Manage Uploaded Files</h2>
 <div id="adminFiles">Loading...</div>
 </section>
@@ -77,18 +86,11 @@ Only share files you own or have permission to distribute.
 </footer>
 
 <script>
-const SUPABASE_URL =
-"https://vmiihzuzdiheyrhmpcor.supabase.co";
-
-const SUPABASE_KEY =
-"sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov";
-
+const SUPABASE_URL = "https://vmiihzuzdiheyrhmpcor.supabase.co";
+const SUPABASE_KEY = "sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov";
 const BUCKET = "vpn-files";
 
-const db = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
-);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let isAdmin = false;
@@ -96,349 +98,353 @@ let isAdmin = false;
 const el = id => document.getElementById(id);
 
 function message(id,text){
- el(id).textContent = text;
+  el(id).textContent = text;
 }
 
 async function checkAdmin(){
- isAdmin = false;
- if(!currentUser) return false;
+  isAdmin = false;
+  if(!currentUser) return false;
 
- const {data,error} = await db
- .from("admin_users")
- .select("user_id")
- .eq("user_id",currentUser.id)
- .maybeSingle();
+  const {data,error} = await db
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id",currentUser.id)
+    .maybeSingle();
 
- if(!error && data) isAdmin = true;
-
- return isAdmin;
+  if(!error && data) isAdmin = true;
+  return isAdmin;
 }
 
 async function refresh(){
- const {data:{user},error} = await db.auth.getUser();
+  const {data,error} = await db.auth.getUser();
 
- if(error){
- message("account","Could not check account: "+error.message);
- return;
- }
+  if(error){
+    message("account","Could not check account: "+error.message);
+    return;
+  }
 
- currentUser = user;
+  currentUser = data.user;
 
- el("uploadPanel").classList.toggle("hidden",!user);
+  el("uploadPanel").classList.toggle("hidden",!currentUser);
 
- message(
- "account",
- user ? "Logged in: "+user.email : "Not logged in"
- );
+  message(
+    "account",
+    currentUser ? "Logged in: "+currentUser.email : "Not logged in"
+  );
 
- await checkAdmin();
+  await checkAdmin();
 
- el("adminPanel").classList.toggle("hidden",!isAdmin);
+  el("adminPanel").classList.toggle("hidden",!isAdmin);
 
- await loadFiles();
+  await loadFiles();
 
- if(isAdmin) await loadAdminFiles();
+  if(isAdmin) await loadAdminFiles();
 }
 
 async function signup(){
- const email = el("email").value.trim();
- const password = el("password").value;
+  const email = el("email").value.trim();
+  const password = el("password").value;
 
- if(!email || password.length < 6){
- alert("Enter a valid email and a password of at least 6 characters.");
- return;
- }
+  if(!email || password.length < 6){
+    alert("Enter a valid email and a password of at least 6 characters.");
+    return;
+  }
 
- const {error} = await db.auth.signUp({email,password});
+  const {error} = await db.auth.signUp({email,password});
 
- alert(error ? error.message :
- "Registration submitted. Check your email if confirmation is required.");
+  alert(
+    error ? error.message :
+    "Registration submitted. Check your email if confirmation is required."
+  );
 }
 
 async function login(){
- const email = el("email").value.trim();
- const password = el("password").value;
+  const email = el("email").value.trim();
+  const password = el("password").value;
 
- const {error} = await db.auth.signInWithPassword({
- email,password
- });
+  const {error} = await db.auth.signInWithPassword({email,password});
 
- if(error){
- alert(error.message);
- return;
- }
+  if(error){
+    alert(error.message);
+    return;
+  }
 
- await refresh();
+  await refresh();
 
- alert(isAdmin ?
- "Administrator login successful." :
- "Login successful.");
+  alert(isAdmin ? "Administrator login successful." : "Login successful.");
 }
 
 async function logout(){
- await db.auth.signOut();
- currentUser = null;
- isAdmin = false;
- await refresh();
+  await db.auth.signOut();
+  currentUser = null;
+  isAdmin = false;
+  await refresh();
 }
 
 async function uploadFile(){
- const file = el("file").files[0];
+  const file = el("file").files[0];
 
- if(!file){
- alert("Choose a file first.");
- return;
- }
+  if(!file){
+    alert("Choose a file first.");
+    return;
+  }
 
- const ext = file.name.split(".").pop().toLowerCase();
+  const ext = file.name.split(".").pop().toLowerCase();
 
- if(!["npvt","ehi","hat","ovpn","json"].includes(ext)){
- alert("Unsupported file type.");
- return;
- }
+  if(!["npvt","ehi","hat","ovpn","json"].includes(ext)){
+    alert("Unsupported file type.");
+    return;
+  }
 
- if(file.size > 10*1024*1024){
- alert("Maximum file size is 10 MB.");
- return;
- }
+  if(file.size > 10*1024*1024){
+    alert("Maximum file size is 10 MB.");
+    return;
+  }
 
- if(!currentUser){
- alert("Please log in first.");
- return;
- }
+  if(!currentUser){
+    alert("Please log in first.");
+    return;
+  }
 
- const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
- const path = currentUser.id+"/"+Date.now()+"_"+safeName;
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  const path = currentUser.id+"/"+Date.now()+"_"+safeName;
 
- message("uploadStatus","Uploading...");
+  message("uploadStatus","Uploading...");
 
- const {error:uploadError} = await db.storage
- .from(BUCKET)
- .upload(path,file);
+  const {error:uploadError} = await db.storage
+    .from(BUCKET)
+    .upload(path,file);
 
- if(uploadError){
- message("uploadStatus",uploadError.message);
- return;
- }
+  if(uploadError){
+    message("uploadStatus",uploadError.message);
+    return;
+  }
 
- const {error:rowError} = await db
- .from("vpn_files")
- .insert({
-  user_id:currentUser.id,
-  file_name:file.name,
-  storage_path:path,
-  status:"pending"
- });
+  const {error:rowError} = await db.from("vpn_files").insert({
+    user_id:currentUser.id,
+    file_name:file.name,
+    storage_path:path,
+    status:"pending"
+  });
 
- if(rowError){
- await db.storage.from(BUCKET).remove([path]);
- message("uploadStatus",rowError.message);
- return;
- }
+  if(rowError){
+    await db.storage.from(BUCKET).remove([path]);
+    message("uploadStatus",rowError.message);
+    return;
+  }
 
- message("uploadStatus","Upload successful. Waiting for administrator approval.");
- el("file").value = "";
+  message("uploadStatus","Upload successful. Waiting for administrator approval.");
 
- await loadFiles();
+  el("file").value = "";
 
- if(isAdmin) await loadAdminFiles();
+  await loadFiles();
+
+  if(isAdmin) await loadAdminFiles();
 }
 
 async function downloadFile(path){
- const {data,error} = await db.storage
- .from(BUCKET)
- .createSignedUrl(path,60);
+  const {data,error} = await db.storage
+    .from(BUCKET)
+    .createSignedUrl(path,60);
 
- if(error){
- alert("Download failed: "+error.message);
- return;
- }
+  if(error){
+    alert("Download failed: "+error.message);
+    return;
+  }
 
- window.location.href = data.signedUrl;
+  window.location.href = data.signedUrl;
 }
 
 async function loadFiles(){
- const box = el("files");
- box.textContent = "Loading...";
+  const box = el("files");
+  box.textContent = "Loading...";
 
- const {data,error} = await db
- .from("vpn_files")
- .select("id,file_name,storage_path,status,created_at")
- .eq("status","approved")
- .order("created_at",{ascending:false});
+  const {data,error} = await db.from("vpn_files")
+    .select("id,file_name,storage_path,status,created_at")
+    .eq("status","approved")
+    .order("created_at",{ascending:false});
 
- if(error){
- box.textContent = "Could not load files: "+error.message;
- return;
- }
+  if(error){
+    box.textContent = "Could not load files: "+error.message;
+    return;
+  }
 
- box.textContent = "";
+  box.textContent = "";
 
- if(!data || !data.length){
- box.textContent = "No approved files available yet.";
- return;
- }
+  if(!data || !data.length){
+    box.textContent = "No approved files available yet.";
+    return;
+  }
 
- data.forEach(f=>{
- const item = document.createElement("div");
- item.className = "file";
+  data.forEach(f=>{
+    const item = document.createElement("div");
+    item.className = "file";
 
- const name = document.createElement("strong");
- name.textContent = f.file_name;
+    const name = document.createElement("strong");
+    name.textContent = f.file_name;
 
- const date = document.createElement("p");
- date.textContent = new Date(f.created_at).toLocaleDateString();
+    const date = document.createElement("p");
+    date.textContent = new Date(f.created_at).toLocaleDateString();
 
- const btn = document.createElement("button");
- btn.textContent = "Download";
- btn.disabled = !currentUser;
- btn.onclick = ()=>downloadFile(f.storage_path);
+    const btn = document.createElement("button");
+    btn.textContent = "Download";
+    btn.disabled = !currentUser;
+    btn.onclick = ()=>downloadFile(f.storage_path);
 
- item.append(name,date,btn);
- box.append(item);
- });
+    item.append(name,date,btn);
+    box.append(item);
+  });
 }
 
 async function loadAdminFiles(){
- if(!isAdmin) return;
+  if(!isAdmin) return;
 
- const box = el("adminFiles");
- box.textContent = "Loading administrator files...";
+  const box = el("adminFiles");
+  box.textContent = "Loading administrator files...";
 
- const {data,error} = await db
- .from("vpn_files")
- .select("id,user_id,file_name,storage_path,status,created_at")
- .order("created_at",{ascending:false});
+  const {data,error} = await db.from("vpn_files")
+    .select("id,user_id,file_name,storage_path,status,created_at")
+    .order("created_at",{ascending:false});
 
- if(error){
- box.textContent = "Admin error: "+error.message;
- return;
- }
+  if(error){
+    box.textContent = "Admin error: "+error.message;
+    return;
+  }
 
- const pending = data.filter(f=>f.status==="pending").length;
- const approved = data.filter(f=>f.status==="approved").length;
- const rejected = data.filter(f=>f.status==="rejected").length;
+  const pending = data.filter(f=>f.status==="pending").length;
+  const approved = data.filter(f=>f.status==="approved").length;
+  const rejected = data.filter(f=>f.status==="rejected").length;
 
- message(
- "adminStats",
- "Total files: "+data.length+
- " | Pending: "+pending+
- " | Approved: "+approved+
- " | Rejected: "+rejected
- );
+  message(
+    "adminStats",
+    "Total: "+data.length+
+    " | Pending: "+pending+
+    " | Approved: "+approved+
+    " | Rejected: "+rejected
+  );
 
- box.textContent = "";
+  box.textContent = "";
 
- if(!data.length){
- box.textContent = "No uploads yet.";
- return;
- }
+  if(!data.length){
+    box.textContent = "No uploads yet.";
+    return;
+  }
 
- data.forEach(f=>{
- const item = document.createElement("div");
- item.className = "file";
+  data.forEach(f=>{
+    const item = document.createElement("div");
+    item.className = "file";
 
- const name = document.createElement("strong");
- name.textContent = f.file_name;
+    const name = document.createElement("strong");
+    name.textContent = f.file_name;
 
- const status = document.createElement("p");
- status.className = "pill";
- status.textContent = "STATUS: "+f.status.toUpperCase();
+    const status = document.createElement("p");
+    status.className = "pill";
+    status.textContent = "STATUS: "+f.status.toUpperCase();
 
- const date = document.createElement("small");
- date.textContent = "Uploaded: "+new Date(f.created_at).toLocaleString();
+    const date = document.createElement("small");
+    date.textContent = "Uploaded: "+new Date(f.created_at).toLocaleString();
 
- item.append(name,status,date);
+    item.append(name,status,date);
 
- const download = document.createElement("button");
- download.textContent = "Review / Download";
- download.onclick = ()=>downloadFile(f.storage_path);
- item.append(download);
+    const download = document.createElement("button");
+    download.textContent = "Review / Download";
+    download.onclick = ()=>downloadFile(f.storage_path);
+    item.append(download);
 
- if(f.status !== "approved"){
- const approve = document.createElement("button");
- approve.textContent = "Approve";
- approve.className = "green";
- approve.onclick = ()=>changeStatus(f.id,"approved");
- item.append(approve);
- }
+    if(f.status !== "approved"){
+      const approve = document.createElement("button");
+      approve.textContent = "Approve";
+      approve.className = "green";
+      approve.onclick = ()=>changeStatus(f.id,"approved");
+      item.append(approve);
+    }
 
- if(f.status !== "rejected"){
- const reject = document.createElement("button");
- reject.textContent = "Reject";
- reject.className = "orange";
- reject.onclick = ()=>changeStatus(f.id,"rejected");
- item.append(reject);
- }
+    if(f.status !== "rejected"){
+      const reject = document.createElement("button");
+      reject.textContent = "Reject";
+      reject.className = "orange";
+      reject.onclick = ()=>changeStatus(f.id,"rejected");
+      item.append(reject);
+    }
 
- const remove = document.createElement("button");
- remove.textContent = "Delete";
- remove.className = "secondary";
- remove.onclick = ()=>deleteFile(f);
- item.append(remove);
+    const remove = document.createElement("button");
+    remove.textContent = "Delete";
+    remove.className = "secondary";
+    remove.onclick = ()=>deleteFile(f);
+    item.append(remove);
 
- box.append(item);
- });
+    box.append(item);
+  });
 }
 
 async function changeStatus(id,status){
- if(!isAdmin){
- alert("Administrator access required.");
- return;
- }
+  if(!isAdmin){
+    alert("Administrator access required.");
+    return;
+  }
 
- const {error} = await db
- .from("vpn_files")
- .update({status:status})
- .eq("id",id);
+  const {error} = await db.from("vpn_files")
+    .update({status})
+    .eq("id",id);
 
- if(error){
- alert("Could not update file: "+error.message);
- return;
- }
+  if(error){
+    alert("Could not update file: "+error.message);
+    return;
+  }
 
- alert("File status changed to "+status+".");
- await loadAdminFiles();
- await loadFiles();
+  alert("File status changed to "+status+".");
+
+  await loadAdminFiles();
+  await loadFiles();
 }
 
 async function deleteFile(file){
- if(!isAdmin){
- alert("Administrator access required.");
- return;
- }
+  if(!isAdmin){
+    alert("Administrator access required.");
+    return;
+  }
 
- if(!confirm("Permanently delete "+file.file_name+"?")) return;
+  if(!confirm("Permanently delete "+file.file_name+"?")) return;
 
- const {error:storageError} = await db.storage
- .from(BUCKET)
- .remove([file.storage_path]);
+  const {error:storageError} = await db.storage
+    .from(BUCKET)
+    .remove([file.storage_path]);
 
- if(storageError){
- alert("Storage deletion failed: "+storageError.message);
- return;
- }
+  if(storageError){
+    alert("Storage deletion failed: "+storageError.message);
+    return;
+  }
 
- const {error} = await db
- .from("vpn_files")
- .delete()
- .eq("id",file.id);
+  const {error} = await db.from("vpn_files")
+    .delete()
+    .eq("id",file.id);
 
- if(error){
- alert("File was removed from storage, but its record could not be deleted: "+error.message);
- return;
- }
+  if(error){
+    alert("Storage file removed, but its database record could not be deleted: "+error.message);
+    return;
+  }
 
- alert("File deleted.");
- await loadAdminFiles();
- await loadFiles();
+  alert("File deleted.");
+
+  await loadAdminFiles();
+  await loadFiles();
 }
 
 db.auth.onAuthStateChange(()=>{
- setTimeout(refresh,0);
+  refresh();
 });
 
 refresh();
 </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .catch(error => console.error("Service worker registration failed:", error));
+  });
+}
+</script>
+
 </body>
 </html>
