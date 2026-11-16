@@ -1,63 +1,150 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NARU HIGURE VPN</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="app.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Naru Higure Tech VPN Files</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080808;color:white;font-family:Arial}
+header{text-align:center;padding:25px;background:#111;border-bottom:2px solid red}
+h1{margin:0}h1 span{color:red}
+main{max-width:650px;margin:20px auto;padding:12px}
+.panel{background:#171717;padding:18px;border-radius:12px;margin-bottom:18px;border:1px solid #333}
+input{width:100%;padding:13px;margin:7px 0;background:#080808;color:white;border:1px solid #555;border-radius:7px}
+button{padding:12px 16px;background:red;color:white;border:0;border-radius:7px;margin:5px;cursor:pointer}
+.secondary{background:#444}
+.status{background:#252525;padding:12px;border-radius:7px;margin-top:10px}
+.file{padding:12px;border-bottom:1px solid #444}
+small{color:#bbb}
+.hidden{display:none}
+</style>
 </head>
 <body>
-  <header class="top">
-    <div class="brand"><span class="mark">NH</span><div><b>NARU HIGURE VPN</b><small>COMMUNITY CONFIGURATION HUB</small></div></div>
-    <a class="admin-link" href="#admin">Admin</a>
-  </header>
-  <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">SHARE • REVIEW • DOWNLOAD</p>
-        <h1>VPN files.<br><em>Community powered.</em></h1>
-        <p>Submit a configuration for review. Approved files become available to everyone.</p>
-        <a class="button" href="#upload">Submit a file</a>
-      </div>
-      <div class="hacker-art" role="img" aria-label="Anonymous hooded hacker illustration">
-        <div class="hood"><div class="face"><div class="eyes"></div></div></div>
-        <div class="art-label">ANONYMOUS / SECURE COMMUNITY</div>
-      </div>
-    </section>
+<header>
+<h1>NARU HIGURE <span>TECH</span></h1>
+<p>VPN Configuration File Sharing</p>
+</header>
+<main>
+<div class="panel">
+<h2>Account Login</h2>
+<input id="email" type="email" placeholder="Email address">
+<input id="password" type="password" placeholder="Password">
+<button onclick="signup()">Register</button>
+<button onclick="login()">Login</button>
+<button class="secondary" onclick="logout()">Logout</button>
+<div id="account" class="status">Not logged in</div>
+</div>
 
-    <section class="panel" id="upload">
-      <h2>Submit a configuration</h2>
-      <p class="muted">Submissions are private until an administrator approves them.</p>
-      <form id="upload-form">
-        <label>Your display name<input id="uploader" maxlength="40" placeholder="Optional"></label>
-        <label>File title<input id="title" maxlength="80" required placeholder="e.g. My V2Ray config"></label>
-        <label>Choose file <span class="muted">(HA Tunnel, HTTP Custom, V2Box, NPVS, NPV, NPVT, OVPN, JSON, CONF, TXT and other files)</span><input id="file" type="file" accept="*/*" required></label>
-        <button class="button" type="submit">Send for review</button>
-        <p id="upload-status" class="status" aria-live="polite"></p>
-      </form>
-      <p class="warning">Only upload files you own or have permission to share. Remove passwords, private keys, and personal credentials first.</p>
-    </section>
+<div class="panel hidden" id="uploadPanel">
+<h2>Upload VPN File</h2>
+<small>Allowed: .npvt, .ehi, .hat, .ovpn, .json</small>
+<input id="file" type="file" accept=".npvt,.ehi,.hat,.ovpn,.json">
+<button onclick="uploadFile()">Upload File</button>
+<div id="uploadStatus" class="status">Choose a file.</div>
+</div>
 
-    <section class="panel">
-      <div class="section-head"><div><h2>Approved files</h2><p class="muted">Only administrator-approved submissions appear here.</p></div><button id="refresh" class="outline">Refresh</button></div>
-      <div id="file-list" class="file-list"><p class="muted">Loading approved files…</p></div>
-    </section>
+<div class="panel">
+<h2>Available VPN Files</h2>
+<div id="files">Loading files...</div>
+</div>
+</main>
 
-    <section class="panel" id="admin">
-      <h2>Administrator</h2>
-      <p class="muted">Sign in with the administrator account configured in Supabase.</p>
-      <form id="login-form" class="login-form">
-        <label>Email<input id="admin-email" type="email" required autocomplete="username"></label>
-        <label>Password<input id="admin-password" type="password" required autocomplete="current-password"></label>
-        <button class="button" type="submit">Sign in</button>
-        <button class="outline hidden" id="logout" type="button">Sign out</button>
-      </form>
-      <p id="admin-status" class="status" aria-live="polite"></p>
-      <div id="pending-list" class="file-list"></div>
-    </section>
-  </main>
-  <footer>© <span id="year"></span> NARU HIGURE VPN • Share responsibly.</footer>
+<script>
+const SUPABASE_URL="https://vmiihzuzdiheyrhmpcor.supabase.co";
+const SUPABASE_KEY="sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov";
+const BUCKET="vpn-files";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
+
+async function refresh(){
+const {data:{user}}=await db.auth.getUser();
+currentUser=user;
+document.getElementById("uploadPanel").classList.toggle("hidden",!user);
+document.getElementById("account").textContent=user?"Logged in: "+user.email:"Not logged in";
+loadFiles();
+}
+
+async function signup(){
+const email=document.getElementById("email").value.trim();
+const password=document.getElementById("password").value;
+if(!email||password.length<6){alert("Enter email and a password of at least 6 characters.");return}
+const {error}=await db.auth.signUp({email,password});
+alert(error?error.message:"Registration submitted. Check your email if confirmation is required.");
+}
+
+async function login(){
+const email=document.getElementById("email").value.trim();
+const password=document.getElementById("password").value;
+const {error}=await db.auth.signInWithPassword({email,password});
+if(error)alert(error.message);
+else{alert("Login successful");refresh();}
+}
+
+async function logout(){
+await db.auth.signOut();
+refresh();
+}
+
+async function uploadFile(){
+const file=document.getElementById("file").files[0];
+if(!file){alert("Choose a file first");return}
+const ext=file.name.split(".").pop().toLowerCase();
+if(!["npvt","ehi","hat","ovpn","json"].includes(ext)){alert("Unsupported file type");return}
+if(file.size>10*1024*1024){alert("Maximum file size is 10 MB");return}
+const {data:{user}}=await db.auth.getUser();
+if(!user){alert("Login first");return}
+const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+const path=user.id+"/"+Date.now()+"_"+safe;
+document.getElementById("uploadStatus").textContent="Uploading...";
+const {error:upError}=await db.storage.from(BUCKET).upload(path,file);
+if(upError){alert(upError.message);return}
+const {error}=await db.from("vpn_files").insert({
+user_id:user.id,
+file_name:file.name,
+storage_path:path,
+status:"pending"
+});
+if(error){
+await db.storage.from(BUCKET).remove([path]);
+alert(error.message);return;
+}
+document.getElementById("uploadStatus").textContent="Uploaded. Waiting for admin approval.";
+document.getElementById("file").value="";
+}
+
+async function loadFiles(){
+const box=document.getElementById("files");
+box.textContent="Loading...";
+const {data,error}=await db.from("vpn_files")
+.select("id,file_name,storage_path")
+.eq("status","approved")
+.order("created_at",{ascending:false});
+if(error){box.textContent="Database not configured yet. Complete the SQL setup.";return}
+box.textContent="";
+if(!data.length){box.textContent="No approved files available yet.";return}
+data.forEach(f=>{
+const item=document.createElement("div");
+item.className="file";
+const name=document.createElement("strong");
+name.textContent=f.file_name+" ";
+const button=document.createElement("button");
+button.textContent="Download";
+button.disabled=!currentUser;
+button.onclick=async()=>{
+const {data:link,error}=await db.storage.from(BUCKET).createSignedUrl(f.storage_path,60);
+if(error){alert(error.message);return}
+location.href=link.signedUrl;
+};
+item.append(name,button);
+box.append(item);
+});
+}
+
+db.auth.onAuthStateChange(()=>setTimeout(refresh,0));
+refresh();
+</script>
 </body>
 </html>
