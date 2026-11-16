@@ -3,147 +3,441 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Naru Higure Tech VPN Files</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080808;color:white;font-family:Arial}
-header{text-align:center;padding:25px;background:#111;border-bottom:2px solid red}
-h1{margin:0}h1 span{color:red}
-main{max-width:650px;margin:20px auto;padding:12px}
-.panel{background:#171717;padding:18px;border-radius:12px;margin-bottom:18px;border:1px solid #333}
+header{text-align:center;padding:25px 12px;background:#111;border-bottom:2px solid red}
+h1{margin:0;font-size:25px}h1 span{color:red}
+main{max-width:760px;margin:20px auto;padding:12px}
+.panel{background:#171717;padding:18px;border:1px solid #333;border-radius:12px;margin-bottom:18px}
+h2{font-size:20px;margin-top:0}
 input{width:100%;padding:13px;margin:7px 0;background:#080808;color:white;border:1px solid #555;border-radius:7px}
-button{padding:12px 16px;background:red;color:white;border:0;border-radius:7px;margin:5px;cursor:pointer}
+button{padding:11px 14px;background:#e00020;color:white;border:0;border-radius:7px;margin:5px 3px;cursor:pointer}
 .secondary{background:#444}
-.status{background:#252525;padding:12px;border-radius:7px;margin-top:10px}
-.file{padding:12px;border-bottom:1px solid #444}
+.green{background:#087d42}
+.orange{background:#a45b00}
+.status{background:#252525;padding:12px;border-radius:7px;margin-top:10px;overflow-wrap:anywhere}
+.file{padding:14px 5px;border-bottom:1px solid #444}
+.file:last-child{border:0}
 small{color:#bbb}
 .hidden{display:none}
+.adminTitle{color:#ff4444}
+.pill{font-size:12px;color:#ff7777}
+footer{text-align:center;color:#888;padding:25px;font-size:12px}
 </style>
 </head>
 <body>
+
 <header>
 <h1>NARU HIGURE <span>TECH</span></h1>
 <p>VPN Configuration File Sharing</p>
 </header>
+
 <main>
-<div class="panel">
-<h2>Account Login</h2>
+
+<section class="panel">
+<h2>Account</h2>
 <input id="email" type="email" placeholder="Email address">
-<input id="password" type="password" placeholder="Password">
+<input id="password" type="password" placeholder="Password (minimum 6 characters)">
 <button onclick="signup()">Register</button>
 <button onclick="login()">Login</button>
 <button class="secondary" onclick="logout()">Logout</button>
 <div id="account" class="status">Not logged in</div>
-</div>
+</section>
 
-<div class="panel hidden" id="uploadPanel">
+<section class="panel hidden" id="uploadPanel">
 <h2>Upload VPN File</h2>
-<small>Allowed: .npvt, .ehi, .hat, .ovpn, .json</small>
+<small>Supported: .npvt, .ehi, .hat, .ovpn, .json — maximum 10 MB</small>
 <input id="file" type="file" accept=".npvt,.ehi,.hat,.ovpn,.json">
 <button onclick="uploadFile()">Upload File</button>
-<div id="uploadStatus" class="status">Choose a file.</div>
-</div>
+<div id="uploadStatus" class="status">Choose a file to upload.</div>
+</section>
 
-<div class="panel">
+<section class="panel">
 <h2>Available VPN Files</h2>
 <div id="files">Loading files...</div>
-</div>
+</section>
+
+<section class="panel hidden" id="adminPanel">
+<h2 class="adminTitle">ADMIN DASHBOARD</h2>
+<p>Administrator control centre</p>
+<div id="adminStats" class="status">Loading administration data...</div>
+<h2>Manage Uploaded Files</h2>
+<div id="adminFiles">Loading...</div>
+</section>
+
 </main>
 
+<footer>
+Naru Higure Tech VPN Files<br>
+Only share files you own or have permission to distribute.
+</footer>
+
 <script>
-const SUPABASE_URL="https://vmiihzuzdiheyrhmpcor.supabase.co";
-const SUPABASE_KEY="sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov";
-const BUCKET="vpn-files";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let currentUser=null;
+const SUPABASE_URL =
+"https://vmiihzuzdiheyrhmpcor.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov";
+
+const BUCKET = "vpn-files";
+
+const db = window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+let currentUser = null;
+let isAdmin = false;
+
+const el = id => document.getElementById(id);
+
+function message(id,text){
+ el(id).textContent = text;
+}
+
+async function checkAdmin(){
+ isAdmin = false;
+ if(!currentUser) return false;
+
+ const {data,error} = await db
+ .from("admin_users")
+ .select("user_id")
+ .eq("user_id",currentUser.id)
+ .maybeSingle();
+
+ if(!error && data) isAdmin = true;
+
+ return isAdmin;
+}
 
 async function refresh(){
-const {data:{user}}=await db.auth.getUser();
-currentUser=user;
-document.getElementById("uploadPanel").classList.toggle("hidden",!user);
-document.getElementById("account").textContent=user?"Logged in: "+user.email:"Not logged in";
-loadFiles();
+ const {data:{user},error} = await db.auth.getUser();
+
+ if(error){
+ message("account","Could not check account: "+error.message);
+ return;
+ }
+
+ currentUser = user;
+
+ el("uploadPanel").classList.toggle("hidden",!user);
+
+ message(
+ "account",
+ user ? "Logged in: "+user.email : "Not logged in"
+ );
+
+ await checkAdmin();
+
+ el("adminPanel").classList.toggle("hidden",!isAdmin);
+
+ await loadFiles();
+
+ if(isAdmin) await loadAdminFiles();
 }
 
 async function signup(){
-const email=document.getElementById("email").value.trim();
-const password=document.getElementById("password").value;
-if(!email||password.length<6){alert("Enter email and a password of at least 6 characters.");return}
-const {error}=await db.auth.signUp({email,password});
-alert(error?error.message:"Registration submitted. Check your email if confirmation is required.");
+ const email = el("email").value.trim();
+ const password = el("password").value;
+
+ if(!email || password.length < 6){
+ alert("Enter a valid email and a password of at least 6 characters.");
+ return;
+ }
+
+ const {error} = await db.auth.signUp({email,password});
+
+ alert(error ? error.message :
+ "Registration submitted. Check your email if confirmation is required.");
 }
 
 async function login(){
-const email=document.getElementById("email").value.trim();
-const password=document.getElementById("password").value;
-const {error}=await db.auth.signInWithPassword({email,password});
-if(error)alert(error.message);
-else{alert("Login successful");refresh();}
+ const email = el("email").value.trim();
+ const password = el("password").value;
+
+ const {error} = await db.auth.signInWithPassword({
+ email,password
+ });
+
+ if(error){
+ alert(error.message);
+ return;
+ }
+
+ await refresh();
+
+ alert(isAdmin ?
+ "Administrator login successful." :
+ "Login successful.");
 }
 
 async function logout(){
-await db.auth.signOut();
-refresh();
+ await db.auth.signOut();
+ currentUser = null;
+ isAdmin = false;
+ await refresh();
 }
 
 async function uploadFile(){
-const file=document.getElementById("file").files[0];
-if(!file){alert("Choose a file first");return}
-const ext=file.name.split(".").pop().toLowerCase();
-if(!["npvt","ehi","hat","ovpn","json"].includes(ext)){alert("Unsupported file type");return}
-if(file.size>10*1024*1024){alert("Maximum file size is 10 MB");return}
-const {data:{user}}=await db.auth.getUser();
-if(!user){alert("Login first");return}
-const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
-const path=user.id+"/"+Date.now()+"_"+safe;
-document.getElementById("uploadStatus").textContent="Uploading...";
-const {error:upError}=await db.storage.from(BUCKET).upload(path,file);
-if(upError){alert(upError.message);return}
-const {error}=await db.from("vpn_files").insert({
-user_id:user.id,
-file_name:file.name,
-storage_path:path,
-status:"pending"
-});
-if(error){
-await db.storage.from(BUCKET).remove([path]);
-alert(error.message);return;
+ const file = el("file").files[0];
+
+ if(!file){
+ alert("Choose a file first.");
+ return;
+ }
+
+ const ext = file.name.split(".").pop().toLowerCase();
+
+ if(!["npvt","ehi","hat","ovpn","json"].includes(ext)){
+ alert("Unsupported file type.");
+ return;
+ }
+
+ if(file.size > 10*1024*1024){
+ alert("Maximum file size is 10 MB.");
+ return;
+ }
+
+ if(!currentUser){
+ alert("Please log in first.");
+ return;
+ }
+
+ const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+ const path = currentUser.id+"/"+Date.now()+"_"+safeName;
+
+ message("uploadStatus","Uploading...");
+
+ const {error:uploadError} = await db.storage
+ .from(BUCKET)
+ .upload(path,file);
+
+ if(uploadError){
+ message("uploadStatus",uploadError.message);
+ return;
+ }
+
+ const {error:rowError} = await db
+ .from("vpn_files")
+ .insert({
+  user_id:currentUser.id,
+  file_name:file.name,
+  storage_path:path,
+  status:"pending"
+ });
+
+ if(rowError){
+ await db.storage.from(BUCKET).remove([path]);
+ message("uploadStatus",rowError.message);
+ return;
+ }
+
+ message("uploadStatus","Upload successful. Waiting for administrator approval.");
+ el("file").value = "";
+
+ await loadFiles();
+
+ if(isAdmin) await loadAdminFiles();
 }
-document.getElementById("uploadStatus").textContent="Uploaded. Waiting for admin approval.";
-document.getElementById("file").value="";
+
+async function downloadFile(path){
+ const {data,error} = await db.storage
+ .from(BUCKET)
+ .createSignedUrl(path,60);
+
+ if(error){
+ alert("Download failed: "+error.message);
+ return;
+ }
+
+ window.location.href = data.signedUrl;
 }
 
 async function loadFiles(){
-const box=document.getElementById("files");
-box.textContent="Loading...";
-const {data,error}=await db.from("vpn_files")
-.select("id,file_name,storage_path")
-.eq("status","approved")
-.order("created_at",{ascending:false});
-if(error){box.textContent="Database not configured yet. Complete the SQL setup.";return}
-box.textContent="";
-if(!data.length){box.textContent="No approved files available yet.";return}
-data.forEach(f=>{
-const item=document.createElement("div");
-item.className="file";
-const name=document.createElement("strong");
-name.textContent=f.file_name+" ";
-const button=document.createElement("button");
-button.textContent="Download";
-button.disabled=!currentUser;
-button.onclick=async()=>{
-const {data:link,error}=await db.storage.from(BUCKET).createSignedUrl(f.storage_path,60);
-if(error){alert(error.message);return}
-location.href=link.signedUrl;
-};
-item.append(name,button);
-box.append(item);
-});
+ const box = el("files");
+ box.textContent = "Loading...";
+
+ const {data,error} = await db
+ .from("vpn_files")
+ .select("id,file_name,storage_path,status,created_at")
+ .eq("status","approved")
+ .order("created_at",{ascending:false});
+
+ if(error){
+ box.textContent = "Could not load files: "+error.message;
+ return;
+ }
+
+ box.textContent = "";
+
+ if(!data || !data.length){
+ box.textContent = "No approved files available yet.";
+ return;
+ }
+
+ data.forEach(f=>{
+ const item = document.createElement("div");
+ item.className = "file";
+
+ const name = document.createElement("strong");
+ name.textContent = f.file_name;
+
+ const date = document.createElement("p");
+ date.textContent = new Date(f.created_at).toLocaleDateString();
+
+ const btn = document.createElement("button");
+ btn.textContent = "Download";
+ btn.disabled = !currentUser;
+ btn.onclick = ()=>downloadFile(f.storage_path);
+
+ item.append(name,date,btn);
+ box.append(item);
+ });
 }
 
-db.auth.onAuthStateChange(()=>setTimeout(refresh,0));
+async function loadAdminFiles(){
+ if(!isAdmin) return;
+
+ const box = el("adminFiles");
+ box.textContent = "Loading administrator files...";
+
+ const {data,error} = await db
+ .from("vpn_files")
+ .select("id,user_id,file_name,storage_path,status,created_at")
+ .order("created_at",{ascending:false});
+
+ if(error){
+ box.textContent = "Admin error: "+error.message;
+ return;
+ }
+
+ const pending = data.filter(f=>f.status==="pending").length;
+ const approved = data.filter(f=>f.status==="approved").length;
+ const rejected = data.filter(f=>f.status==="rejected").length;
+
+ message(
+ "adminStats",
+ "Total files: "+data.length+
+ " | Pending: "+pending+
+ " | Approved: "+approved+
+ " | Rejected: "+rejected
+ );
+
+ box.textContent = "";
+
+ if(!data.length){
+ box.textContent = "No uploads yet.";
+ return;
+ }
+
+ data.forEach(f=>{
+ const item = document.createElement("div");
+ item.className = "file";
+
+ const name = document.createElement("strong");
+ name.textContent = f.file_name;
+
+ const status = document.createElement("p");
+ status.className = "pill";
+ status.textContent = "STATUS: "+f.status.toUpperCase();
+
+ const date = document.createElement("small");
+ date.textContent = "Uploaded: "+new Date(f.created_at).toLocaleString();
+
+ item.append(name,status,date);
+
+ const download = document.createElement("button");
+ download.textContent = "Review / Download";
+ download.onclick = ()=>downloadFile(f.storage_path);
+ item.append(download);
+
+ if(f.status !== "approved"){
+ const approve = document.createElement("button");
+ approve.textContent = "Approve";
+ approve.className = "green";
+ approve.onclick = ()=>changeStatus(f.id,"approved");
+ item.append(approve);
+ }
+
+ if(f.status !== "rejected"){
+ const reject = document.createElement("button");
+ reject.textContent = "Reject";
+ reject.className = "orange";
+ reject.onclick = ()=>changeStatus(f.id,"rejected");
+ item.append(reject);
+ }
+
+ const remove = document.createElement("button");
+ remove.textContent = "Delete";
+ remove.className = "secondary";
+ remove.onclick = ()=>deleteFile(f);
+ item.append(remove);
+
+ box.append(item);
+ });
+}
+
+async function changeStatus(id,status){
+ if(!isAdmin){
+ alert("Administrator access required.");
+ return;
+ }
+
+ const {error} = await db
+ .from("vpn_files")
+ .update({status:status})
+ .eq("id",id);
+
+ if(error){
+ alert("Could not update file: "+error.message);
+ return;
+ }
+
+ alert("File status changed to "+status+".");
+ await loadAdminFiles();
+ await loadFiles();
+}
+
+async function deleteFile(file){
+ if(!isAdmin){
+ alert("Administrator access required.");
+ return;
+ }
+
+ if(!confirm("Permanently delete "+file.file_name+"?")) return;
+
+ const {error:storageError} = await db.storage
+ .from(BUCKET)
+ .remove([file.storage_path]);
+
+ if(storageError){
+ alert("Storage deletion failed: "+storageError.message);
+ return;
+ }
+
+ const {error} = await db
+ .from("vpn_files")
+ .delete()
+ .eq("id",file.id);
+
+ if(error){
+ alert("File was removed from storage, but its record could not be deleted: "+error.message);
+ return;
+ }
+
+ alert("File deleted.");
+ await loadAdminFiles();
+ await loadFiles();
+}
+
+db.auth.onAuthStateChange(()=>{
+ setTimeout(refresh,0);
+});
+
 refresh();
 </script>
 </body>
