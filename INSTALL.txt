@@ -1,0 +1,39 @@
+NARU HIGURE TECH VPN FILES — PWA FILES
+
+1) In your GitHub repository, upload these items into the repository ROOT (same folder as index.html):
+   - manifest.json
+   - sw.js
+   - the whole icons folder
+
+2) In index.html, add these lines INSIDE the <head> section:
+   <link rel="manifest" href="/Naru-higure-tech-vpnfiles-/manifest.json">
+   <meta name="theme-color" content="#080808">
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+   <link rel="apple-touch-icon" href="/Naru-higure-tech-vpnfiles-/icons/icon-192.png">
+
+3) Add this script just BEFORE the closing </body> tag in index.html:
+   <script>
+     if ('serviceWorker' in navigator) {
+       window.addEventListener('load', () => {
+         navigator.serviceWorker.register('/Naru-higure-tech-vpnfiles-/sw.js')
+           .catch(error => console.error('Service worker registration failed:', error));
+       });
+     }
+   </script>
+
+4) Commit the changes to the main branch and wait for GitHub Pages to publish.
+
+5) Test these URLs in Chrome. Each should open without a 404:
+   https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/manifest.json
+   https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/sw.js
+   https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/icons/icon-192.png
+   https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/icons/icon-512.png
+
+6) Paste the main website URL into https://www.pwabuilder.com/ again.
+
+IMPORTANT:
+- Do not replace your existing index.html with these files. They are additions plus small snippets.
+- Keep your existing Supabase login and database code unchanged.
+- The service worker deliberately does not cache Supabase requests or private VPN files.
+- This makes a PWA installable; PWABuilder still needs to validate the site and generate the Android package.
