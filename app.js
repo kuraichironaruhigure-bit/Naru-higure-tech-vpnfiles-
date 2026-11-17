@@ -23,7 +23,23 @@ async function loadApproved(){
     info.querySelector("b").textContent=item.title;
     info.querySelector("small").textContent=`${item.file_name} • ${item.uploader||"Community member"}`;
     const btn=document.createElement("button");btn.className="outline";btn.textContent="Download";
-    btn.onclick=async()=>{const {data,error}=await db.storage.from(BUCKET).createSignedUrl(item.file_path,60);if(error){alert(error.message);return;}window.open(data.signedUrl,"_blank","noopener");};
+    btn.textContent="Download";
+    btn.onclick=async()=>{
+      // Downloads are available only to signed-in accounts.
+      const {data:sessionData,error:sessionError}=await db.auth.getSession();
+      if(sessionError){alert("Could not check your sign-in. Please try again.");return;}
+      if(!sessionData.session){
+        alert("Please sign in or create a free account before downloading files.");
+        const signInButton=$("openSignin");
+        if(signInButton) signInButton.click();
+        return;
+      }
+      btn.disabled=true;btn.textContent="Preparing…";
+      const {data,error}=await db.storage.from(BUCKET).createSignedUrl(item.file_path,60);
+      btn.disabled=false;btn.textContent="Download";
+      if(error){alert("Download failed: "+error.message+". If you are signed in, check the Supabase storage permissions.");return;}
+      window.location.assign(data.signedUrl);
+    };
     row.append(info,btn);box.append(row);
   }
 }
