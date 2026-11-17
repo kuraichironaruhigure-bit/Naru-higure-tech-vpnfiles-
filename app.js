@@ -1,14 +1,15 @@
-// Add your Supabase Project URL and anon/publishable key below.
-// Never put a Supabase service_role/secret key in a public website.
-const SUPABASE_URL = "PASTE_YOUR_SUPABASE_PROJECT_URL";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
+// Naru Higure Hub X — Supabase file sharing and administrator review.
+// This uses the public publishable key only. Never place a service-role key in a website.
+const SUPABASE_URL = "https://vmiihzuzdiheyrhmpcor.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov";
 const BUCKET = "vpn-files";
-const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("PASTE_") && !SUPABASE_ANON_KEY.includes("PASTE_");
+const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_ANON_KEY.includes("PASTE_");
 const db = configured && window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+window.naruSupabase = db;
 const $ = id => document.getElementById(id);
 $("year").textContent = new Date().getFullYear();
 
-function configMessage(){return "Website files are published, but Supabase is not configured yet. Follow README.txt to connect it."}
+function configMessage(){return "Supabase could not be reached. Check your internet connection and project settings.";}
 async function loadApproved(){
   const box=$("file-list");
   if(!db){box.innerHTML=`<p class="muted">${configMessage()}</p>`;return;}
@@ -18,9 +19,11 @@ async function loadApproved(){
   if(!data.length){box.innerHTML='<p class="muted">No approved files yet.</p>';return;}
   for(const item of data){
     const row=document.createElement("div");row.className="file-row";
-    const info=document.createElement("div");info.innerHTML=`<b></b><small></small>`;info.querySelector("b").textContent=item.title;info.querySelector("small").textContent=`${item.file_name} • ${item.uploader||"Community member"}`;
+    const info=document.createElement("div");info.innerHTML="<b></b><small></small>";
+    info.querySelector("b").textContent=item.title;
+    info.querySelector("small").textContent=`${item.file_name} • ${item.uploader||"Community member"}`;
     const btn=document.createElement("button");btn.className="outline";btn.textContent="Download";
-    btn.onclick=async()=>{const {data,error}=await db.storage.from(BUCKET).createSignedUrl(item.file_path,60);if(error){alert(error.message);return;}window.open(data.signedUrl,"_blank");};
+    btn.onclick=async()=>{const {data,error}=await db.storage.from(BUCKET).createSignedUrl(item.file_path,60);if(error){alert(error.message);return;}window.open(data.signedUrl,"_blank","noopener");};
     row.append(info,btn);box.append(row);
   }
 }
@@ -46,7 +49,7 @@ $("login-form").addEventListener("submit",async e=>{
   const {data,error}=await db.auth.signInWithPassword({email:$("admin-email").value,password:$("admin-password").value});
   if(error){status.textContent=error.message;return;}
   if(data.user?.app_metadata?.role!=="admin"){await db.auth.signOut();status.textContent="This account is not an administrator.";return;}
-  status.textContent="Administrator signed in."; $("logout").classList.remove("hidden"); await loadPending();
+  status.textContent="Administrator signed in.";$("logout").classList.remove("hidden");await loadPending();
 });
 $("logout").onclick=async()=>{await db?.auth.signOut();$("logout").classList.add("hidden");$("pending-list").innerHTML="";$("admin-status").textContent="Signed out.";};
 async function loadPending(){
