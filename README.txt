@@ -1,26 +1,33 @@
-NARU HIGURE FILE HUB — UPDATE FILES
+NARU HIGURE FILE HUB — COMPLETE WEBSITE UPDATE
 
 FILES
-- index.html: replace the existing index.html in your CURRENT GitHub repository.
-- app.js: upload beside index.html in the same repository folder.
-- supabase-setup.sql: run in Supabase Dashboard > SQL Editor > New query.
+- index.html: website pages and black/red design
+- app.js: Supabase sign-in, downloads, uploads, profiles, chat, stats, admin approval
+- supabase-setup.sql: database tables, storage buckets, RLS policies, counters, owner admin role
 
-SUPABASE
-The browser-safe publishable key and project URL are already configured in app.js.
-Do not add a service_role/secret key to website files.
-Run the SQL script. Then in Supabase Dashboard > Authentication > Users, select your own account and set app_metadata.role to admin. Do not set this in user-editable user_metadata.
+GITHUB INSTALL
+1. Open your repository: https://github.com/kuraichironaruhigure-bit/Naru-higure-tech-vpnfiles-
+2. Replace the repository index.html with this index.html.
+3. Replace the repository app.js with this app.js.
+4. Keep manifest.json, service worker files, and icons already in your repository.
+5. Commit the changes.
 
-FEATURES
-- Approved VPN file library
-- Public view counter and signed-in download counter
-- Sign-in required before downloads and submissions
-- Profile display name, about and avatar
-- Community chat
-- Admin-only approve/reject workflow
-- Existing WhatsApp group and channel links retained
+SUPABASE INSTALL
+1. Open https://supabase.com/dashboard/project/vmiihzuzdiheyrhmpcor/sql/new
+2. Paste the entire supabase-setup.sql and click Run.
+3. If the admin account has not been created yet, sign up on the website using kuraichironaruhigure@gmail.com, then run the SQL script again so the account receives the admin role.
+4. In Supabase Authentication > URL Configuration, add the GitHub Pages website URL to Site URL / Redirect URLs if email confirmation is enabled.
+5. Keep the vpn-files bucket private. The SQL sets this automatically.
 
-IMPORTANT NOTES
-- Download count records a download request/start, not a confirmed installation on someone's phone.
-- Admin approval depends on app_metadata.role = admin being set securely on your own Supabase user.
-- This package uses the Supabase project already configured in the recovered website.
-- If you have an older app.js, replace it with this matching app.js.
+SECURITY / FEATURES
+- Only signed-in users can download approved files; files are stored in a private bucket and downloaded with short-lived signed URLs.
+- Only signed-in users can upload; submissions remain pending until administrator approval.
+- Only the owner account with app_metadata.role=admin can approve/reject.
+- Chat reads and writes require authentication (enforced by RLS).
+- Users can edit their own profile and upload an avatar.
+- Public file cards show per-file views/downloads and aggregate totals.
+- Home opens with the welcome message and sign-in prompt; navigation opens individual pages.
+- WhatsApp group/channel links are preserved.
+
+IMPORTANT
+The code is prepared from your latest saved source files but has not been deployed to GitHub or live-tested against your Supabase project. The Marketplace page is a placeholder because you have not specified listing/payment rules. Never put a Supabase service-role key in browser code.

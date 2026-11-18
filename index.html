@@ -29,6 +29,10 @@ footer{text-align:center;color:#77737d;font-size:12px;padding:30px 15px 45px}
 .modal-backdrop{position:fixed;inset:0;z-index:60;background:#000b;display:none;place-items:center;padding:18px}.modal-backdrop.show{display:grid}.modal{width:min(430px,100%);background:#14141b;border:1px solid #42323a;border-radius:18px;padding:21px;box-shadow:var(--shadow)}.modal-top{display:flex;justify-content:space-between;align-items:center}.modal h2{margin:0}.modal-tabs{display:flex;gap:8px;margin:16px 0}.modal-tabs button{flex:1}.modal-note{font-size:12px;color:#aaa}
 body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636d;color:var(--text);background:var(--bg)}body.light:before{opacity:.08}body.light .topbar,body.light .drawer{background:#f7f6f8;color:#18151a}body.light .brand-sub,body.light .lead,body.light .muted{color:#69636d}body.light .stat,body.light .panel,body.light .quick-card{background:#fff;border-color:#ddd}body.light .search,body.light .secondary,body.light .icon-btn,body.light .theme-picker{background:#fff;color:#222;border-color:#ddd}body.light .search input,body.light form input{color:#222}body.light .menu-item{color:#39343c}body.light .menu-item.active{background:#e7e4e9;color:#111}body.light .file-row{background:#f8f7f9;border-color:#ddd}body.light .file-row b{color:#19151b}
 @media(max-width:650px){.topbar{height:68px;padding:0 12px}.brand-mark{width:39px;height:39px}.brand-name{font-size:13px}.brand-sub{font-size:8px}.header-actions{gap:6px}.signin{padding:9px 10px}.theme-head{display:none}.hero{padding-top:48px}h1{letter-spacing:-1.3px}.lead{font-size:14px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{min-height:102px;padding:14px}.quick-grid{grid-template-columns:1fr}.panel{padding:16px}.search button{padding:10px 12px}.hero-actions a{flex:1 1 100%}}
+
+#profile-preview-wrap{display:flex;align-items:center;gap:14px;margin:12px 0}
+#profile-preview{background:#222}
+#admin-page .panel{margin-top:18px}
 </style>
 </head>
 <body>
@@ -61,13 +65,15 @@ body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636
 
   <section class="section" id="files">
     <div class="section-head"><div><h2>VPN Files</h2><p class="muted">Browse approved community configuration files.</p></div><span class="eyebrow">PUBLIC LIBRARY</span></div>
+    <div class="quick-grid" style="margin-bottom:14px"><div class="quick-card"><strong id="total-views">0</strong><p>Total file views</p></div><div class="quick-card"><strong id="total-downloads">0</strong><p>Total downloads</p></div></div>
     <div class="panel"><div id="file-list" class="file-list"><p class="muted">Loading approved files…</p></div><p id="search-empty" class="status hidden">No matching files found.</p></div>
   </section>
 
   <section class="section" id="upload">
     <div class="panel">
       <h2>Submit to the hub</h2><p class="muted">Share a VPN configuration. Submissions stay pending until approved by the administrator.</p>
-      <form id="upload-form">
+      <p id="upload-gate" class="muted">Sign in before submitting a file. <button class="outline" type="button" onclick="document.getElementById('openSignin').click()">Sign in</button></p>
+      <form id="upload-form" class="hidden">
         <label>Your display name<input id="uploader" maxlength="40" placeholder="Optional"></label>
         <label>File title<input id="title" maxlength="80" required placeholder="e.g. My VPN configuration"></label>
         <label>Choose file <span class="muted">(HA Tunnel, HTTP Custom, V2Box, NPVS, OVPN, JSON, CONF, TXT and other file types)</span><input id="file" type="file" accept="*/*" required></label>
@@ -82,21 +88,27 @@ body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636
   <section class="section" id="channels"><div class="panel"><h2>Channel Links</h2><p class="muted">Follow the owner channel for updates.</p><div class="quick-card"><strong>ECONET & NETONE VPNS FREE UNLIMITED DATA</strong><p>Follow the WhatsApp channel for new posts and updates.</p><a href="https://whatsapp.com/channel/0029Vb6gqSHGpLHRByWpRx0L" target="_blank" rel="noopener">Follow WhatsApp channel →</a></div></div></section>
   <section class="section" id="community"><div class="panel">
     <h2>Community Chat</h2><p class="muted">Sign in to join the conversation.</p>
-    <div id="community-messages" class="file-list"><p class="muted">Community messages will appear here.</p></div>
-    <form id="community-form"><label>Write a message<input id="community-message" maxlength="1000" placeholder="Type your message..." required></label><button class="primary" type="submit">Send message</button><p id="community-status" class="status"></p></form>
+    <p id="community-gate" class="muted">Sign in or create an account to view and send community messages. <button class="outline" type="button" onclick="document.getElementById('openSignin').click()">Sign in</button></p>
+    <div id="community-messages" class="file-list hidden"><p class="muted">Community messages will appear here.</p></div>
+    <form id="community-form" class="hidden"><label>Write a message<input id="community-message" maxlength="1000" placeholder="Type your message..." required></label><button class="primary" type="submit">Send message</button><p id="community-status" class="status"></p></form>
     </div></section>
-  <section class="section" id="marketplace"><div class="panel"><h2>Marketplace</h2><p class="muted">Marketplace listings will be added here when the marketplace feature is connected.</p></div></section>
+  <section class="section" id="marketplace"><div class="panel"><h2>Marketplace</h2><p class="muted">A dedicated place for community listings. Listings and payments are not enabled yet, so no purchases will be requested here.</p><div class="quick-card"><strong>Marketplace coming soon</strong><p>Approved VPN files are available in the VPN Files page. New marketplace features can be added when listing and payment rules are defined.</p><a href="#files">Browse approved files →</a></div></div></section>
   <section class="section" id="profile"><div class="panel">
-    <h2>My Profile</h2><p class="muted">Sign in to update your display name, about section and profile picture.</p>
-    <form id="profile-form"><label>Display name<input id="profile-name" maxlength="40" placeholder="Your display name"></label>
+    <h2>My Profile</h2><p class="muted">Your profile, display name and profile picture.</p>
+    <p id="profile-gate" class="muted">Sign in to manage your profile. <button class="outline" type="button" onclick="document.getElementById('openSignin').click()">Sign in</button></p>
+    <div id="profile-preview-wrap" class="quick-card hidden"><img id="profile-preview" alt="Profile picture" src="" class="hidden" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:2px solid #ef2638"><p id="profile-preview-name" class="muted">No profile picture yet.</p></div>
+    <form id="profile-form" class="hidden"><label>Display name<input id="profile-name" maxlength="40" placeholder="Your display name"></label>
     <label>About you<input id="profile-about" maxlength="180" placeholder="A short profile description"></label>
     <label>Profile picture<input id="profile-avatar" type="file" accept="image/*"></label>
     <button class="primary" type="submit">Save profile</button><p id="profile-status" class="status"></p></form>
-    </div><div class="panel" id="admin"><h2>Administrator Review</h2><p class="muted">Only the configured administrator can approve or reject file submissions.</p>
-    <form id="login-form" class="login-form"><label>Email<input id="admin-email" type="email" required autocomplete="username"></label><label>Password<input id="admin-password" type="password" required autocomplete="current-password"></label><button class="primary" type="submit">Admin sign in</button><button class="outline hidden" id="logout" type="button">Sign out</button></form>
+    <button class="outline hidden" id="user-logout" type="button">Sign out</button>
+    </div></section>
+
+  <section class="section" id="admin-page"><div class="panel hidden" id="admin">
+    <h2>Administrator Dashboard</h2><p class="muted">Only the site administrator can review and approve submitted files.</p>
     <p id="admin-status" class="status" aria-live="polite"></p><div id="pending-list" class="file-list"></div>
-    <div class="section-head" style="margin-top:15px"><span class="muted">Refresh approved files</span><button id="refresh" class="outline" type="button">Refresh</button></div>
-  </div></section>
+    <div class="section-head" style="margin-top:15px"><span class="muted">Refresh submissions and files</span><button id="refresh" class="outline" type="button">Refresh</button></div>
+  </div><div class="panel" id="admin-gate"><h2>Administrator Panel</h2><p class="muted">This page is restricted to the website administrator.</p></div></section>
 </main>
 <footer>© <span id="year"></span> NARU HIGURE FILE HUB · HUB • NETWORK · Share responsibly.</footer>
 
@@ -112,105 +124,7 @@ body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636
     <a class="menu-item" href="#community"><span class="mi">▤</span>Community</a>
     <a class="menu-item" href="#marketplace"><span class="mi">▢</span>Marketplace</a>
     <a class="menu-item" href="#profile"><span class="mi">♙</span>My Profile</a>
-  </nav>
-  <a class="primary menu-submit" href="#upload"><span>＋</span> Submit to the hub</a>
-  <div class="divider"></div><div class="theme-label">THEME</div>
-  <div class="theme-picker"><span>🎨</span><button class="t-black" data-theme="dark" aria-label="Dark theme"></button><button class="t-red" data-theme="red" aria-label="Red accent"></button><button class="t-white" data-theme="light" aria-label="Light theme"></button></div>
-</aside>
-
-<div class="modal-backdrop" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
-  <div class="modal"><div class="modal-top"><h2 id="accountTitle">Welcome to Naru Higure</h2><button class="close" id="closeAccount" aria-label="Close">×</button></div>
-    <div class="modal-tabs"><button class="primary" id="tabSignin" type="button">Sign in</button><button class="secondary" id="tabSignup" type="button">Create account</button></div>
-    <form id="accountSignin"><label>Email<input id="accountEmail" type="email" required autocomplete="email"></label><label>Password<input id="accountPassword" type="password" required autocomplete="current-password"></label><button class="primary" type="submit">Sign in</button></form>
-    <form id="accountSignup" class="hidden"><label>Email<input id="newEmail" type="email" required autocomplete="email"></label><label>Create password<input id="newPassword" type="password" minlength="6" required autocomplete="new-password"></label><button class="primary" type="submit">Create free account</button></form>
-    <p class="modal-note" id="accountStatus" aria-live="polite">Accounts are managed securely by Supabase. Email confirmation may be required.</p>
-  </div>
-</div>
-
-<script>
-(()=>{
- const $=id=>document.getElementById(id),body=document.body;
- const drawer=$('drawer');
- function menu(open){body.classList.toggle('menu-open',open);drawer.setAttribute('aria-hidden',String(!open));}
- $('openMenu').addEventListener('click',()=>menu(true));$('closeMenu').addEventListener('click',()=>menu(false));$('scrim').addEventListener('click',()=>menu(false));
- drawer.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>menu(false)));
- function setTheme(t){body.classList.toggle('light',t==='light');document.querySelector('meta[name="theme-color"]').content=t==='light'?'#f4f3f6':'#08080b';}
- n" id="openSignin">Sign in</button>
-    <button class="icon-btn" id="openMenu" aria-label="Open menu">☰</button>
-  </div>
-</header>
-<main class="wrap" id="home">
-  <section class="hero">
-    <div class="eyebrow">PREMIUM COMMUNITY INFRASTRUCTURE</div>
-    <h1>The hub for files,<br>groups and the <span class="red">future.</span></h1>
-    <p class="lead">Files, groups, channels, community and marketplace — engineered in one hub.</p>
-    <form class="search" id="searchForm"><span class="glass">⌕</span><input id="hubSearch" type="search" placeholder="Search VPN files, guides, tools..." aria-label="Search hub"><button class="primary" type="submit">Search</button></form>
-    <div class="hero-actions">
-      <a class="secondary" href="#files"><span style="color:var(--red)">▣</span> Browse VPN files</a>
-      <a class="secondary" href="https://whatsapp.com/channel/0029Vb6gqSHGpLHRByWpRx0L" target="_blank" rel="noopener"><span style="color:var(--red)">◉</span> Follow owner channel</a>
-      <a class="primary" href="#account" id="heroSignup">Create free account <span>→</span></a>
-    </div>
-  </section>
-  <section class="stats" aria-label="Hub statistics">
-    <article class="stat"><div class="stat-icon">▣</div><div class="stat-number">14</div><div class="stat-label">VPN FILES</div></article>
-    <article class="stat"><div class="stat-icon">♧</div><div class="stat-number">1</div><div class="stat-label">GROUPS</div></article>
-    <article class="stat"><div class="stat-icon">◉</div><div class="stat-number">2</div><div class="stat-label">CHANNELS</div></article>
-    <article class="stat"><div class="stat-icon">▤</div><div class="stat-number">14</div><div class="stat-label">COMMUNITY POSTS</div></article>
-  </section>
-
-  <section class="section" id="files">
-    <div class="section-head"><div><h2>VPN Files</h2><p class="muted">Browse approved community configuration files.</p></div><span class="eyebrow">PUBLIC LIBRARY</span></div>
-    <div class="panel"><div id="file-list" class="file-list"><p class="muted">Loading approved files…</p></div><p id="search-empty" class="status hidden">No matching files found.</p></div>
-  </section>
-
-  <section class="section" id="upload">
-    <div class="panel">
-      <h2>Submit to the hub</h2><p class="muted">Share a VPN configuration. Submissions stay pending until approved by the administrator.</p>
-      <form id="upload-form">
-        <label>Your display name<input id="uploader" maxlength="40" placeholder="Optional"></label>
-        <label>File title<input id="title" maxlength="80" required placeholder="e.g. My VPN configuration"></label>
-        <label>Choose file <span class="muted">(HA Tunnel, HTTP Custom, V2Box, NPVS, OVPN, JSON, CONF, TXT and other file types)</span><input id="file" type="file" accept="*/*" required></label>
-        <button class="primary" type="submit">Submit for approval</button><p id="upload-status" class="status" aria-live="polite"></p>
-      </form>
-      <p class="warning">Only upload files you own or have permission to share. Remove passwords, private keys and personal credentials first.</p>
-    </div>
-  </section>
-
-  <section class="section" id="billboard"><div class="panel"><h2>Billboard</h2><p class="muted">Featured updates and announcements from Naru Higure File Hub.</p><div class="quick-card"><strong>Welcome to Naru Higure File Hub</strong><p>VPN files, group links and channel links in one place.</p></div></div></section>
-  <section class="section" id="groups"><div class="panel"><h2>Group Links</h2><p class="muted">Join the official community group.</p><div class="quick-card"><strong>ECONET & NETONE VPN Community</strong><p>Open the WhatsApp group using the link below.</p><a href="https://chat.whatsapp.com/J4SShNGs5da1d2rRdbA1Ka?s=cl&p=a&iam=2" target="_blank" rel="noopener">Join WhatsApp group →</a></div></div></section>
-  <section class="section" id="channels"><div class="panel"><h2>Channel Links</h2><p class="muted">Follow the owner channel for updates.</p><div class="quick-card"><strong>ECONET & NETONE VPNS FREE UNLIMITED DATA</strong><p>Follow the WhatsApp channel for new posts and updates.</p><a href="https://whatsapp.com/channel/0029Vb6gqSHGpLHRByWpRx0L" target="_blank" rel="noopener">Follow WhatsApp channel →</a></div></div></section>
-  <section class="section" id="community"><div class="panel">
-    <h2>Community Chat</h2><p class="muted">Sign in to join the conversation.</p>
-    <div id="community-messages" class="file-list"><p class="muted">Community messages will appear here.</p></div>
-    <form id="community-form"><label>Write a message<input id="community-message" maxlength="1000" placeholder="Type your message..." required></label><button class="primary" type="submit">Send message</button><p id="community-status" class="status"></p></form>
-    </div></section>
-  <section class="section" id="marketplace"><div class="panel"><h2>Marketplace</h2><p class="muted">Marketplace listings will be added here when the marketplace feature is connected.</p></div></section>
-  <section class="section" id="profile"><div class="panel">
-    <h2>My Profile</h2><p class="muted">Sign in to update your display name, about section and profile picture.</p>
-    <form id="profile-form"><label>Display name<input id="profile-name" maxlength="40" placeholder="Your display name"></label>
-    <label>About you<input id="profile-about" maxlength="180" placeholder="A short profile description"></label>
-    <label>Profile picture<input id="profile-avatar" type="file" accept="image/*"></label>
-    <button class="primary" type="submit">Save profile</button><p id="profile-status" class="status"></p></form>
-    </div><div class="panel" id="admin"><h2>Administrator Review</h2><p class="muted">Only the configured administrator can approve or reject file submissions.</p>
-    <form id="login-form" class="login-form"><label>Email<input id="admin-email" type="email" required autocomplete="username"></label><label>Password<input id="admin-password" type="password" required autocomplete="current-password"></label><button class="primary" type="submit">Admin sign in</button><button class="outline hidden" id="logout" type="button">Sign out</button></form>
-    <p id="admin-status" class="status" aria-live="polite"></p><div id="pending-list" class="file-list"></div>
-    <div class="section-head" style="margin-top:15px"><span class="muted">Refresh approved files</span><button id="refresh" class="outline" type="button">Refresh</button></div>
-  </div></section>
-</main>
-<footer>© <span id="year"></span> NARU HIGURE FILE HUB · HUB • NETWORK · Share responsibly.</footer>
-
-<div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-label="Main navigation" aria-hidden="true">
-  <div class="drawer-head"><a class="brand" href="#home"><span class="brand-mark">🚀</span><span><span class="brand-name">NARU HIGURE <em>FILE HUB</em></span><span class="brand-sub">HUB • NETWORK</span></span></a><button class="close" id="closeMenu" aria-label="Close menu">×</button></div>
-  <nav class="menu-list">
-    <a class="menu-item active" href="#home"><span class="mi">⌂</span>Home</a>
-    <a class="menu-item" href="#files"><span class="mi">▣</span>VPN Files</a>
-    <a class="menu-item" href="#billboard"><span class="mi">🏆</span>Billboard</a>
-    <a class="menu-item" href="#groups"><span class="mi">♧</span>Group Links</a>
-    <a class="menu-item" href="#channels"><span class="mi">◉</span>Channel Links</a>
-    <a class="menu-item" href="#community"><span class="mi">▤</span>Community</a>
-    <a class="menu-item" href="#marketplace"><span class="mi">▢</span>Marketplace</a>
-    <a class="menu-item" href="#profile"><span class="mi">♙</span>My Profile</a>
+    <a class="menu-item hidden" id="admin-menu-link" href="#admin-page"><span class="mi">⚙</span>Admin Panel</a>
   </nav>
   <a class="primary menu-submit" href="#upload"><span>＋</span> Submit to the hub</a>
   <div class="divider"></div><div class="theme-label">THEME</div>
@@ -249,5 +163,153 @@ body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636
  $('accountSignup').addEventListener('submit',async e=>{e.preventDefault();const accountClient=getAccountClient();if(!accountClient){$('accountStatus').textContent='Supabase is not available. Check your connection.';return;}$('accountStatus').textContent='Creating your account…';const {data,error}=await accountClient.auth.signUp({email:$('newEmail').value.trim(),password:$('newPassword').value});$('accountStatus').textContent=error?error.message:(data.user?'Account created. Check your email if confirmation is enabled.':'Account request submitted.');if(!error)$('accountSignup').reset();});
 })();
 </script>
+
+<style id="naru-page-navigation-styles">
+  /* App-style pages: show one destination at a time. */
+  #home > .hero,
+  #home > .section,
+  #home > #signin-page { display: none; }
+  #home > .hero.active-page,
+  #home > .section.active-page,
+  #home > #signin-page.active-page { display: block; }
+  #home > .stats { display: none !important; }
+  #home > .hero.active-page {
+    min-height: calc(100vh - 150px);
+    max-width: 760px;
+    padding: 15vh 0 45px;
+  }
+  #home > .hero.active-page .eyebrow,
+  #home > .hero.active-page .search,
+  #home > .hero.active-page .hero-actions { display: none !important; }
+  #home > .hero.active-page h1 { margin-top: 0; }
+  #home > .hero.active-page .lead { margin-bottom: 22px; }
+  #home > .hero.active-page .home-signin-link {
+    display: inline-flex;
+    margin-top: 8px;
+  }
+  #signin-page { padding: 35px 0; min-height: 65vh; }
+  #signin-page .modal-backdrop {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: block;
+    padding: 0;
+    background: transparent;
+  }
+  #signin-page .modal { margin: 0 auto; }
+  .menu-item.active { outline: 1px solid #ef263855; }
+</style>
+
+<script id="naru-page-navigation">
+(() => {
+  const main = document.getElementById("home");
+  const drawer = document.getElementById("drawer");
+  if (!main || !drawer) return;
+
+  const hero = main.querySelector(":scope > .hero");
+  const modalBackdrop = document.getElementById("accountModal");
+  if (!hero || !modalBackdrop) return;
+
+  /* Make the existing Supabase sign-in/sign-up forms a normal page. */
+  const signinPage = document.createElement("section");
+  signinPage.id = "signin-page";
+  signinPage.className = "section";
+  signinPage.innerHTML = `
+    <div class="section-head">
+      <div>
+        <h2>Sign in or create an account</h2>
+        <p class="muted">Sign in to download files and use the community.</p>
+      </div>
+    </div>`;
+  signinPage.appendChild(modalBackdrop);
+  main.appendChild(signinPage);
+
+  /* Simplify the home screen to the welcome message requested. */
+  const heading = hero.querySelector("h1");
+  const lead = hero.querySelector(".lead");
+  if (heading) heading.innerHTML = "Welcome to<br>NARU HIGURE <span class='red'>FILE HUB</span>";
+  if (lead) lead.textContent = "Sign in to get your files and access the community.";
+  const homeButton = document.createElement("button");
+  homeButton.type = "button";
+  homeButton.className = "primary home-signin-link";
+  homeButton.textContent = "Sign in to get your files";
+  homeButton.addEventListener("click", () => showPage("signin"));
+  hero.appendChild(homeButton);
+
+  const pageMap = {
+    "#home": "home",
+    "#files": "files",
+    "#upload": "upload",
+    "#billboard": "billboard",
+    "#groups": "groups",
+    "#channels": "channels",
+    "#community": "community",
+    "#marketplace": "marketplace",
+    "#profile": "profile",
+    "#admin-page": "admin-page",
+    "#account": "signin",
+    "#signin": "signin"
+  };
+
+  const pages = {
+    home: hero,
+    signin: signinPage,
+    files: document.getElementById("files"),
+    upload: document.getElementById("upload"),
+    billboard: document.getElementById("billboard"),
+    groups: document.getElementById("groups"),
+    channels: document.getElementById("channels"),
+    community: document.getElementById("community"),
+    marketplace: document.getElementById("marketplace"),
+    profile: document.getElementById("profile"),
+    "admin-page": document.getElementById("admin-page")
+  };
+
+  function showPage(name) {
+    const target = pages[name] || pages.home;
+    Object.values(pages).forEach(page => {
+      if (page) page.classList.toggle("active-page", page === target);
+    });
+    drawer.querySelectorAll(".menu-item").forEach(link => {
+      link.classList.toggle("active", pageMap[link.getAttribute("href")] === name);
+    });
+    document.body.classList.remove("menu-open");
+    drawer.setAttribute("aria-hidden", "true");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (name === "signin") {
+      const modal = document.getElementById("accountModal");
+      if (modal) modal.classList.add("show");
+    }
+  }
+
+  /* Handle every drawer link, including the Submit to the hub link. */
+  drawer.querySelectorAll("a[href^='#']").forEach(link => {
+    link.addEventListener("click", event => {
+      const name = pageMap[link.getAttribute("href")];
+      if (!name) return;
+      event.preventDefault();
+      showPage(name);
+    });
+  });
+
+  const openSignin = document.getElementById("openSignin");
+  if (openSignin) openSignin.addEventListener("click", () => showPage("signin"));
+
+  const heroSignup = document.getElementById("heroSignup");
+  if (heroSignup) heroSignup.addEventListener("click", event => {
+    event.preventDefault();
+    showPage("signin");
+    const tab = document.getElementById("tabSignup");
+    if (tab) tab.click();
+  });
+
+  const closeAccount = document.getElementById("closeAccount");
+  if (closeAccount) closeAccount.addEventListener("click", () => showPage("home"));
+
+  /* Start on a clean welcome screen, not the file list. */
+  showPage("home");
+})();
+</script>
+
 </body>
 </html>
