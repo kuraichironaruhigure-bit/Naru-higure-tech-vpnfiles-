@@ -1,144 +1,41 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#08080b">
-<meta name="description" content="Naru Higure Hub X — VPN files, groups, channels and community in one hub.">
-<link rel="manifest" href="./manifest.json">
-<title>NARU HIGURE HUB X</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script defer src="app.js"></script>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09090b"><title>NARU HIGURE VPN Community</title>
 <style>
-:root{color-scheme:dark;--bg:#08080b;--panel:#15151b;--panel2:#1d1d25;--line:#303039;--red:#ef2638;--red2:#b91527;--text:#f7f7fa;--muted:#a5a5b1;--shadow:0 18px 55px #0008}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow-x:hidden}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background-image:radial-gradient(#fff9 1px,transparent 1.5px),radial-gradient(#fff7 1px,transparent 1.5px);background-size:83px 83px,137px 137px;background-position:8px 12px,42px 58px;opacity:.22}
-a{color:inherit;text-decoration:none}button,input{font:inherit}button,a{ -webkit-tap-highlight-color:transparent}button{cursor:pointer}
-.topbar{height:76px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 18px;background:#08080bf2;border-bottom:1px solid #28232a;position:sticky;top:0;z-index:20;backdrop-filter:blur(14px)}
-.brand{display:flex;align-items:center;gap:10px;min-width:0}.brand-mark{width:43px;height:43px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 25%,#49202a,#15151b 65%);border:1px solid #74303a;font-size:22px;box-shadow:0 0 22px #ef263822}.brand-name{font-size:15px;font-weight:900;letter-spacing:.8px;white-space:nowrap}.brand-name em{color:var(--red);font-style:normal}.brand-sub{font-size:9px;letter-spacing:2px;color:#aaa;margin-top:1px}
-.header-actions{display:flex;align-items:center;gap:9px}.icon-btn{width:39px;height:39px;border:1px solid #34313a;background:#15151b;border-radius:12px;color:white;display:grid;place-items:center;font-size:20px}.theme-dots{display:flex;align-items:center;gap:4px}.dot{width:8px;height:8px;border-radius:50%;display:inline-block}.dot.red{background:#ef2638}.dot.black{background:#050505;border:1px solid #777}.dot.white{background:#fff}
-.primary,.secondary,.outline{border:0;border-radius:12px;padding:12px 16px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:9px}.primary{background:var(--red);color:white;box-shadow:0 7px 24px #ef263833}.primary:active{transform:translateY(1px)}.secondary{background:#19191f;color:#eee;border:1px solid #34313a}.outline{background:transparent;color:#eee;border:1px solid #49434a}.signin{padding:10px 14px;border-radius:10px;font-size:13px}
-.wrap{width:min(1060px,100%);margin:auto;padding:0 18px}.hero{padding:62px 0 35px;max-width:790px}.eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid #44313a;border-radius:50px;padding:7px 12px;color:#d7cbd0;font-size:10px;font-weight:800;letter-spacing:1.5px;background:#151015aa}.eyebrow:before{content:"";width:7px;height:7px;background:var(--red);border-radius:50%;box-shadow:0 0 12px var(--red)}h1{font-size:clamp(38px,8vw,68px);line-height:1.04;letter-spacing:-2px;margin:23px 0 17px;font-weight:900}h1 .red{color:var(--red)}.lead{font-size:16px;color:#b8b6c0;max-width:650px;margin:0 0 25px}.search{display:flex;align-items:center;gap:8px;padding:6px;background:#19191f;border:1px solid #38343d;border-radius:15px;max-width:720px;box-shadow:var(--shadow)}.search .glass{font-size:19px;color:#aaa;padding-left:9px}.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:white;padding:10px 4px}.search input::placeholder{color:#85838e}.search button{padding:11px 18px;border-radius:10px}.hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}.hero-actions a{font-size:13px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:14px 0 42px}.stat{background:linear-gradient(145deg,#1a1a22,#111116);border:1px solid #302d36;border-radius:16px;padding:17px;min-height:112px}.stat-icon{color:var(--red);font-size:21px}.stat-number{font-size:25px;font-weight:900;margin-top:5px}.stat-label{font-size:10px;color:#aaa;letter-spacing:1.2px;font-weight:800}
-.section{padding:16px 0 30px;scroll-margin-top:90px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.section h2{font-size:22px;margin:0 0 5px}.muted{color:var(--muted)}.panel{background:linear-gradient(145deg,#17171e,#111116);border:1px solid #302d36;border-radius:17px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
-.file-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:11px}.file-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#101015;border:1px solid #34313a;border-radius:13px;padding:13px}.file-row>div{min-width:0}.file-row b{display:block;overflow-wrap:anywhere}.file-row small{display:block;color:var(--muted);font-size:11px;overflow-wrap:anywhere}.file-row button{flex-shrink:0}.file-actions{display:flex;gap:6px;flex-wrap:wrap}.status{font-size:13px;color:#c5c0c8}.hidden{display:none!important}
-form label{display:block;color:#d8d4da;font-size:13px;margin:12px 0}form input{display:block;width:100%;margin-top:6px;padding:12px 13px;background:#09090d;border:1px solid #403943;border-radius:10px;color:white}input[type=file]{padding:10px}.warning{font-size:12px;color:#b8aab0}.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.quick-card{padding:16px;border-radius:14px;border:1px solid #34313a;background:#121218}.quick-card strong{display:block;margin-bottom:4px}.quick-card p{margin:0;color:var(--muted);font-size:13px}.quick-card a{display:inline-block;color:#ff6b78;font-weight:800;margin-top:9px;font-size:13px}
-footer{text-align:center;color:#77737d;font-size:12px;padding:30px 15px 45px}
-/* Slide-in navigation */
-.scrim{position:fixed;inset:0;background:#0009;backdrop-filter:blur(5px);z-index:40;opacity:0;pointer-events:none;transition:opacity .25s}.drawer{position:fixed;right:0;top:0;bottom:0;width:min(85vw,390px);background:#08080b;border-left:1px solid #332b31;z-index:41;transform:translateX(105%);transition:transform .28s ease;padding:22px 18px;overflow:auto;box-shadow:-25px 0 70px #0009}.menu-open .scrim{opacity:1;pointer-events:auto}.menu-open .drawer{transform:translateX(0)}.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}.close{width:38px;height:38px;border-radius:11px;background:#19191f;color:white;border:1px solid #37323a;font-size:21px}.menu-list{display:grid;gap:6px}.menu-item{display:flex;align-items:center;gap:13px;padding:12px 13px;border-radius:11px;color:#d2cfd5;font-weight:650}.menu-item .mi{width:24px;text-align:center;font-size:19px;color:#ef5361}.menu-item.active{background:#24242b;color:#fff}.menu-item:active{background:#28232a}.menu-submit{width:100%;margin:19px 0 20px;padding:14px}.divider{height:1px;background:#302d35;margin:0 0 17px}.theme-label{font-size:10px;color:#88838d;letter-spacing:1.7px;font-weight:900;margin-bottom:10px}.theme-picker{display:flex;align-items:center;gap:9px;background:#17171d;border:1px solid #35313a;border-radius:30px;padding:9px 13px;width:max-content}.theme-picker button{width:17px;height:17px;border-radius:50%;border:1px solid #888}.theme-picker .t-black{background:#050505}.theme-picker .t-red{background:#ef2638}.theme-picker .t-white{background:#fff}
-/* Account dialog */
-.modal-backdrop{position:fixed;inset:0;z-index:60;background:#000b;display:none;place-items:center;padding:18px}.modal-backdrop.show{display:grid}.modal{width:min(430px,100%);background:#14141b;border:1px solid #42323a;border-radius:18px;padding:21px;box-shadow:var(--shadow)}.modal-top{display:flex;justify-content:space-between;align-items:center}.modal h2{margin:0}.modal-tabs{display:flex;gap:8px;margin:16px 0}.modal-tabs button{flex:1}.modal-note{font-size:12px;color:#aaa}
-body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636d;color:var(--text);background:var(--bg)}body.light:before{opacity:.08}body.light .topbar,body.light .drawer{background:#f7f6f8;color:#18151a}body.light .brand-sub,body.light .lead,body.light .muted{color:#69636d}body.light .stat,body.light .panel,body.light .quick-card{background:#fff;border-color:#ddd}body.light .search,body.light .secondary,body.light .icon-btn,body.light .theme-picker{background:#fff;color:#222;border-color:#ddd}body.light .search input,body.light form input{color:#222}body.light .menu-item{color:#39343c}body.light .menu-item.active{background:#e7e4e9;color:#111}body.light .file-row{background:#f8f7f9;border-color:#ddd}body.light .file-row b{color:#19151b}
-@media(max-width:650px){.topbar{height:68px;padding:0 12px}.brand-mark{width:39px;height:39px}.brand-name{font-size:13px}.brand-sub{font-size:8px}.header-actions{gap:6px}.signin{padding:9px 10px}.theme-head{display:none}.hero{padding-top:48px}h1{letter-spacing:-1.3px}.lead{font-size:14px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{min-height:102px;padding:14px}.quick-grid{grid-template-columns:1fr}.panel{padding:16px}.search button{padding:10px 12px}.hero-actions a{flex:1 1 100%}}
-</style>
-</head>
-<body>
-<header class="topbar">
-  <a class="brand" href="#home" aria-label="Naru Higure Hub X home"><span class="brand-mark">🚀</span><span><span class="brand-name">NARU HIGURE <em>X</em></span><span class="brand-sub">HUB • NETWORK</span></span></a>
-  <div class="header-actions">
-    <button class="icon-btn theme-head" id="themeHead" aria-label="Change theme"><span class="theme-dots"><i class="dot red"></i><i class="dot black"></i><i class="dot white"></i></span></button>
-    <button class="primary signin" id="openSignin">Sign in</button>
-    <button class="icon-btn" id="openMenu" aria-label="Open menu">☰</button>
-  </div>
-</header>
-<main class="wrap" id="home">
-  <section class="hero">
-    <div class="eyebrow">PREMIUM COMMUNITY INFRASTRUCTURE</div>
-    <h1>The hub for files,<br>groups and the <span class="red">future.</span></h1>
-    <p class="lead">Files, groups, channels, community and marketplace — engineered in one hub.</p>
-    <form class="search" id="searchForm"><span class="glass">⌕</span><input id="hubSearch" type="search" placeholder="Search VPN files, guides, tools..." aria-label="Search hub"><button class="primary" type="submit">Search</button></form>
-    <div class="hero-actions">
-      <a class="secondary" href="#files"><span style="color:var(--red)">▣</span> Browse VPN files</a>
-      <a class="secondary" href="https://whatsapp.com/channel/0029Vb6gqSHGpLHRByWpRx0L" target="_blank" rel="noopener"><span style="color:var(--red)">◉</span> Follow owner channel</a>
-      <a class="primary" href="#account" id="heroSignup">Create free account <span>→</span></a>
-    </div>
-  </section>
-  <section class="stats" aria-label="Hub statistics">
-    <article class="stat"><div class="stat-icon">▣</div><div class="stat-number">14</div><div class="stat-label">VPN FILES</div></article>
-    <article class="stat"><div class="stat-icon">♧</div><div class="stat-number">1</div><div class="stat-label">GROUPS</div></article>
-    <article class="stat"><div class="stat-icon">◉</div><div class="stat-number">2</div><div class="stat-label">CHANNELS</div></article>
-    <article class="stat"><div class="stat-icon">▤</div><div class="stat-number">14</div><div class="stat-label">COMMUNITY POSTS</div></article>
-  </section>
-
-  <section class="section" id="files">
-    <div class="section-head"><div><h2>VPN Files</h2><p class="muted">Browse approved community configuration files.</p></div><span class="eyebrow">PUBLIC LIBRARY</span></div>
-    <div class="panel"><div id="file-list" class="file-list"><p class="muted">Loading approved files…</p></div><p id="search-empty" class="status hidden">No matching files found.</p></div>
-  </section>
-
-  <section class="section" id="upload">
-    <div class="panel">
-      <h2>Submit to the hub</h2><p class="muted">Share a VPN configuration. Submissions stay pending until approved by the administrator.</p>
-      <form id="upload-form">
-        <label>Your display name<input id="uploader" maxlength="40" placeholder="Optional"></label>
-        <label>File title<input id="title" maxlength="80" required placeholder="e.g. My VPN configuration"></label>
-        <label>Choose file <span class="muted">(HA Tunnel, HTTP Custom, V2Box, NPVS, OVPN, JSON, CONF, TXT and other file types)</span><input id="file" type="file" accept="*/*" required></label>
-        <button class="primary" type="submit">Submit for approval</button><p id="upload-status" class="status" aria-live="polite"></p>
-      </form>
-      <p class="warning">Only upload files you own or have permission to share. Remove passwords, private keys and personal credentials first.</p>
-    </div>
-  </section>
-
-  <section class="section" id="billboard"><div class="panel"><h2>Billboard</h2><p class="muted">Featured updates and announcements from Naru Higure Hub.</p><div class="quick-card"><strong>Welcome to Naru Higure Hub X</strong><p>VPN files, group links and channel links in one place.</p></div></div></section>
-  <section class="section" id="groups"><div class="panel"><h2>Group Links</h2><p class="muted">Join the official community group.</p><div class="quick-card"><strong>ECONET & NETONE VPN Community</strong><p>Open the WhatsApp group using the link below.</p><a href="https://chat.whatsapp.com/J4SShNGs5da1d2rRdbA1Ka?s=cl&p=a&iam=2" target="_blank" rel="noopener">Join WhatsApp group →</a></div></div></section>
-  <section class="section" id="channels"><div class="panel"><h2>Channel Links</h2><p class="muted">Follow the owner channel for updates.</p><div class="quick-card"><strong>ECONET & NETONE VPNS FREE UNLIMITED DATA</strong><p>Follow the WhatsApp channel for new posts and updates.</p><a href="https://whatsapp.com/channel/0029Vb6gqSHGpLHRByWpRx0L" target="_blank" rel="noopener">Follow WhatsApp channel →</a></div></div></section>
-  <section class="section" id="community"><div class="panel"><h2>Community</h2><p class="muted">Community updates and shared information will appear here.</p><div class="quick-card"><strong>Community posts</strong><p>Stay connected through the official WhatsApp group and channel.</p><a href="https://chat.whatsapp.com/J4SShNGs5da1d2rRdbA1Ka?s=cl&p=a&iam=2" target="_blank" rel="noopener">Open community →</a></div></div></section>
-  <section class="section" id="marketplace"><div class="panel"><h2>Marketplace</h2><p class="muted">Marketplace listings will be added here when the marketplace feature is connected.</p></div></section>
-  <section class="section" id="profile"><div class="panel" id="admin"><h2>My Profile / Administrator</h2><p class="muted">Administrator sign-in and file review.</p>
-    <form id="login-form" class="login-form"><label>Email<input id="admin-email" type="email" required autocomplete="username"></label><label>Password<input id="admin-password" type="password" required autocomplete="current-password"></label><button class="primary" type="submit">Admin sign in</button><button class="outline hidden" id="logout" type="button">Sign out</button></form>
-    <p id="admin-status" class="status" aria-live="polite"></p><div id="pending-list" class="file-list"></div>
-    <div class="section-head" style="margin-top:15px"><span class="muted">Refresh approved files</span><button id="refresh" class="outline" type="button">Refresh</button></div>
-  </div></section>
-</main>
-<footer>© <span id="year"></span> NARU HIGURE HUB X · HUB • NETWORK · Share responsibly.</footer>
-
-<div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-label="Main navigation" aria-hidden="true">
-  <div class="drawer-head"><a class="brand" href="#home"><span class="brand-mark">🚀</span><span><span class="brand-name">NARU HIGURE <em>X</em></span><span class="brand-sub">HUB • NETWORK</span></span></a><button class="close" id="closeMenu" aria-label="Close menu">×</button></div>
-  <nav class="menu-list">
-    <a class="menu-item active" href="#home"><span class="mi">⌂</span>Home</a>
-    <a class="menu-item" href="#files"><span class="mi">▣</span>VPN Files</a>
-    <a class="menu-item" href="#billboard"><span class="mi">🏆</span>Billboard</a>
-    <a class="menu-item" href="#groups"><span class="mi">♧</span>Group Links</a>
-    <a class="menu-item" href="#channels"><span class="mi">◉</span>Channel Links</a>
-    <a class="menu-item" href="#community"><span class="mi">▤</span>Community</a>
-    <a class="menu-item" href="#marketplace"><span class="mi">▢</span>Marketplace</a>
-    <a class="menu-item" href="#profile"><span class="mi">♙</span>My Profile</a>
-  </nav>
-  <a class="primary menu-submit" href="#upload"><span>＋</span> Submit to the hub</a>
-  <div class="divider"></div><div class="theme-label">THEME</div>
-  <div class="theme-picker"><span>🎨</span><button class="t-black" data-theme="dark" aria-label="Dark theme"></button><button class="t-red" data-theme="red" aria-label="Red accent"></button><button class="t-white" data-theme="light" aria-label="Light theme"></button></div>
-</aside>
-
-<div class="modal-backdrop" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
-  <div class="modal"><div class="modal-top"><h2 id="accountTitle">Welcome to Naru Higure</h2><button class="close" id="closeAccount" aria-label="Close">×</button></div>
-    <div class="modal-tabs"><button class="primary" id="tabSignin" type="button">Sign in</button><button class="secondary" id="tabSignup" type="button">Create account</button></div>
-    <form id="accountSignin"><label>Email<input id="accountEmail" type="email" required autocomplete="email"></label><label>Password<input id="accountPassword" type="password" required autocomplete="current-password"></label><button class="primary" type="submit">Sign in</button></form>
-    <form id="accountSignup" class="hidden"><label>Email<input id="newEmail" type="email" required autocomplete="email"></label><label>Create password<input id="newPassword" type="password" minlength="6" required autocomplete="new-password"></label><button class="primary" type="submit">Create free account</button></form>
-    <p class="modal-note" id="accountStatus" aria-live="polite">Accounts are managed securely by Supabase. Email confirmation may be required.</p>
-  </div>
-</div>
-
-<script>
-(()=>{
- const $=id=>document.getElementById(id),body=document.body;
- const drawer=$('drawer');
- function menu(open){body.classList.toggle('menu-open',open);drawer.setAttribute('aria-hidden',String(!open));}
- $('openMenu').addEventListener('click',()=>menu(true));$('closeMenu').addEventListener('click',()=>menu(false));$('scrim').addEventListener('click',()=>menu(false));
- drawer.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>menu(false)));
- function setTheme(t){body.classList.toggle('light',t==='light');document.querySelector('meta[name="theme-color"]').content=t==='light'?'#f4f3f6':'#08080b';}
- $('themeHead').addEventListener('click',()=>setTheme(body.classList.contains('light')?'dark':'light'));
- document.querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
- const modal=$('accountModal');function showModal(mode){modal.classList.add('show');$('accountSignin').classList.toggle('hidden',mode==='signup');$('accountSignup').classList.toggle('hidden',mode!=='signup');$('tabSignin').className=mode==='signup'?'secondary':'primary';$('tabSignup').className=mode==='signup'?'primary':'secondary';$('accountStatus').textContent='Accounts are managed securely by Supabase. Email confirmation may be required.';}
- $('openSignin').addEventListener('click',()=>showModal('signin'));$('heroSignup').addEventListener('click',e=>{e.preventDefault();showModal('signup')});$('closeAccount').addEventListener('click',()=>modal.classList.remove('show'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('show')});$('tabSignin').addEventListener('click',()=>showModal('signin'));$('tabSignup').addEventListener('click',()=>showModal('signup'));
- // Public search filters the approved-file cards rendered by app.js.
- $('searchForm').addEventListener('submit',e=>{e.preventDefault();const q=$('hubSearch').value.trim().toLowerCase();let visible=0;document.querySelectorAll('#file-list .file-row').forEach(row=>{const yes=!q||row.textContent.toLowerCase().includes(q);row.classList.toggle('hidden',!yes);if(yes)visible++;});$('search-empty').classList.toggle('hidden',visible!==0);$('files').scrollIntoView({behavior:'smooth'});});
- $('year').textContent=new Date().getFullYear();
- // The account forms use the same public Supabase project as app.js.
- const SUPABASE_URL='https://vmiihzuzdiheyrhmpcor.supabase.co';
- const SUPABASE_KEY='sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov';
- function getAccountClient(){if(window.naruSupabase)return window.naruSupabase;try{return window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;}catch(e){return null;}}
- $('accountSignin').addEventListener('submit',async e=>{e.preventDefault();const accountClient=getAccountClient();if(!accountClient){$('accountStatus').textContent='Supabase is not available. Check your connection.';return;}$('accountStatus').textContent='Signing in…';const {error}=await accountClient.auth.signInWithPassword({email:$('accountEmail').value.trim(),password:$('accountPassword').value});$('accountStatus').textContent=error?error.message:'Signed in successfully.';if(!error)setTimeout(()=>modal.classList.remove('show'),900);});
- $('accountSignup').addEventListener('submit',async e=>{e.preventDefault();const accountClient=getAccountClient();if(!accountClient){$('accountStatus').textContent='Supabase is not available. Check your connection.';return;}$('accountStatus').textContent='Creating your account…';const {data,error}=await accountClient.auth.signUp({email:$('newEmail').value.trim(),password:$('newPassword').value});$('accountStatus').textContent=error?error.message:(data.user?'Account created. Check your email if confirmation is enabled.':'Account request submitted.');if(!error)$('accountSignup').reset();});
-})();
-</script>
-</body>
-</html>
+:root{color-scheme:dark;--bg:#09090b;--panel:#15151b;--line:#39252c;--red:#e32636;--muted:#aaa2a7;--white:#f7f4f5}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#3a1018 0,transparent 34%),var(--bg);color:var(--white);font:15px system-ui,Arial}header{padding:22px 16px;border-bottom:1px solid var(--line);background:#09090bed;position:sticky;top:0;z-index:2}.wrap,main{max-width:1000px;margin:auto}h1{margin:0;font-size:clamp(25px,5vw,38px)}h1 span{color:var(--red)}.sub,.hint,.status,small{color:var(--muted)}main{padding:20px 14px 45px}.panel{background:linear-gradient(150deg,#19191f,#111114);border:1px solid var(--line);border-radius:14px;padding:17px;margin:15px 0}.bar,.profile{display:flex;gap:10px;align-items:center;flex-wrap:wrap}button{background:var(--red);border:0;border-radius:9px;padding:10px 14px;color:white;font-weight:700}button.secondary{background:#292329;border:1px solid #49333a}button:disabled{opacity:.5}input,textarea{width:100%;background:#09090d;border:1px solid #46353b;border-radius:8px;padding:11px;color:white;margin:7px 0 11px}textarea{min-height:65px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.file,.msg{padding:13px;border:1px solid #3a3035;border-radius:10px;background:#101014;overflow-wrap:anywhere}.file strong{display:block}.stats{font-size:12px;color:#ddd;margin:9px 0}.avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:#302126;border:2px solid #80313b}.chat{display:flex;flex-direction:column;gap:8px;max-height:350px;overflow:auto}.hidden{display:none!important}.actions{display:flex;gap:8px;flex-wrap:wrap}.hint{font-size:13px;line-height:1.5}footer{text-align:center;color:#817980;padding:20px;font-size:12px}
+</style></head><body>
+<header><div class="wrap"><h1>NARU <span>HIGURE</span> VPN</h1><p class="sub">Community VPN file hub · Share · Discover · Connect</p></div></header>
+<main>
+<section class="panel"><div class="bar"><button id="loginBtn">Sign in with Google</button><button id="logoutBtn" class="secondary hidden">Sign out</button><span id="who" class="status">Not signed in</span></div><p id="message" class="status">Welcome to the NARU HIGURE community.</p></section>
+<section id="profilePanel" class="panel hidden"><h2>My profile</h2><div class="profile"><img id="avatar" class="avatar" alt="Profile picture"><strong id="myName">Member</strong></div><label>Display name</label><input id="displayName" maxlength="35" placeholder="Your display name"><label>About me</label><textarea id="bio" maxlength="160" placeholder="A short description"></textarea><label>Profile picture (DP)</label><input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="saveProfile">Save profile</button><p id="profileStatus" class="status"></p></section>
+<section class="panel"><h2>Share a VPN file</h2><p class="hint">Sign in to submit a file. New submissions stay private until administrator approval. Maximum 50 MB.</p><input id="fileInput" type="file"><button id="uploadBtn" disabled>Submit for approval</button><p id="uploadStatus" class="status"></p></section>
+<section class="panel"><h2>Approved files</h2><p class="hint">Views and download clicks are counted separately. Sign in to download.</p><div id="library" class="grid">Connect Firebase to load files.</div></section>
+<section class="panel"><h2>Community members</h2><div id="members" class="grid">Sign in to view profiles.</div></section>
+<section class="panel"><h2>Community chat</h2><p class="hint">Messages are visible to signed-in members. Be respectful and don't share private information.</p><div id="chat" class="chat">Sign in to join the chat.</div><div id="chatForm" class="hidden"><textarea id="chatText" maxlength="500" placeholder="Write a message"></textarea><button id="sendChat">Send message</button></div><p id="chatStatus" class="status"></p></section>
+<section id="adminPanel" class="panel hidden"><h2>Administrator review</h2><div id="pending" class="grid"></div></section>
+</main><footer>NARU HIGURE VPN · Share responsibly.</footer>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import{getAuth,GoogleAuthProvider,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import{getFirestore,collection,addDoc,getDocs,getDoc,query,where,orderBy,limit,doc,setDoc,updateDoc,deleteDoc,serverTimestamp,increment,onSnapshot}from"https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import{getStorage,ref,uploadBytes,getDownloadURL,deleteObject}from"https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+/* Paste your Firebase web app config here. Keep ADMIN_UID set to your own Firebase Auth UID. */
+const firebaseConfig={apiKey:"PASTE_API_KEY",authDomain:"PASTE_PROJECT_ID.firebaseapp.com",projectId:"PASTE_PROJECT_ID",storageBucket:"PASTE_PROJECT_ID.appspot.com",messagingSenderId:"PASTE_MESSAGING_SENDER_ID",appId:"PASTE_APP_ID"};
+const ADMIN_UID="PASTE_YOUR_GOOGLE_AUTH_UID", $=id=>document.getElementById(id), say=(id,t)=>$(id).textContent=t;
+if(Object.values(firebaseConfig).some(v=>!v||v.startsWith("PASTE_"))){say("message","Firebase setup required: add your Firebase web config and administrator UID before publishing.");$("library").textContent="The page design is ready. Live accounts, counters, profiles and chat need Firebase configuration.";$("loginBtn").disabled=true;}
+else{
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),storage=getStorage(app),provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});
+let user=null,stopChat=null;
+getRedirectResult(auth).catch(e=>say("message",e.message));
+$("loginBtn").onclick=()=>signInWithRedirect(auth,provider).catch(e=>say("message",e.message));$("logoutBtn").onclick=()=>signOut(auth);$("uploadBtn").onclick=upload;$("saveProfile").onclick=saveProfile;$("sendChat").onclick=sendMessage;
+onAuthStateChanged(auth,async u=>{user=u;$("loginBtn").classList.toggle("hidden",!!u);$("logoutBtn").classList.toggle("hidden",!u);$("who").textContent=u?("Signed in: "+(u.displayName||u.email)):"Not signed in";$("uploadBtn").disabled=!u;$("profilePanel").classList.toggle("hidden",!u);$("chatForm").classList.toggle("hidden",!u);$("adminPanel").classList.toggle("hidden",!u||u.uid!==ADMIN_UID||ADMIN_UID.startsWith("PASTE_"));if(stopChat){stopChat();stopChat=null}if(u){await loadProfile();await loadMembers();listenChat();if(u.uid===ADMIN_UID&&!ADMIN_UID.startsWith("PASTE_"))loadPending()}else{$("members").textContent="Sign in to view profiles.";$("chat").textContent="Sign in to join the chat."}renderFiles()});
+function fallback(){return "data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="#302126"/><circle cx="40" cy="29" r="14" fill="#aaa"/><path d="M12 76c2-19 13-28 28-28s26 9 28 28" fill="#aaa"/></svg>')}
+async function loadProfile(){let s=await getDoc(doc(db,"profiles",user.uid)),p=s.exists()?s.data():{};$("displayName").value=p.displayName||user.displayName||"";$("bio").value=p.bio||"";$("myName").textContent=p.displayName||user.displayName||"Member";$("avatar").src=p.photoURL||user.photoURL||fallback()}
+async function saveProfile(){say("profileStatus","Saving…");try{let photoURL=$("avatar").src,f=$("avatarFile").files[0];if(f){if(f.size>3*1024*1024)throw Error("DP must be 3 MB or smaller.");if(!["image/jpeg","image/png","image/webp"].includes(f.type))throw Error("Use JPG, PNG or WEBP.");let r=ref(storage,"profilePictures/"+user.uid+"/avatar");await uploadBytes(r,f);photoURL=await getDownloadURL(r)}let displayName=$("displayName").value.trim()||"Member";await setDoc(doc(db,"profiles",user.uid),{uid:user.uid,displayName,bio:$("bio").value.trim(),photoURL,updatedAt:serverTimestamp()},{merge:true});$("myName").textContent=displayName;$("avatar").src=photoURL;await loadMembers();say("profileStatus","Profile saved.")}catch(e){say("profileStatus",e.message)}}
+async function loadMembers(){let root=$("members");root.innerHTML="";try{let s=await getDocs(query(collection(db,"profiles"),orderBy("updatedAt","desc"),limit(40)));if(s.empty){root.textContent="No profiles yet.";return}s.forEach(d=>{let p=d.data(),el=document.createElement("article");el.className="file";let row=document.createElement("div");row.className="profile";let im=document.createElement("img");im.className="avatar";im.src=p.photoURL||fallback();let n=document.createElement("strong");n.textContent=p.displayName||"Member";let b=document.createElement("small");b.textContent=p.bio||"Community member";row.append(im,n);el.append(row,b);root.append(el)})}catch(e){root.textContent=e.message}}
+async function upload(){let f=$("fileInput").files[0];if(!user)return say("uploadStatus","Sign in first.");if(!f)return say("uploadStatus","Choose a file.");if(f.size>50*1024*1024)return say("uploadStatus","File exceeds 50 MB.");$("uploadBtn").disabled=true;say("uploadStatus","Uploading…");try{let safe=f.name.replace(/[^\w.\-() ]/g,"_"),path="submissions/"+user.uid+"/"+Date.now()+"_"+safe;await uploadBytes(ref(storage,path),f);await addDoc(collection(db,"files"),{name:f.name,path,ownerUid:user.uid,ownerName:$("displayName").value||user.displayName||"Member",status:"pending",size:f.size,views:0,downloads:0,createdAt:serverTimestamp()});say("uploadStatus","Submitted for administrator approval.");$("fileInput").value="";if(user.uid===ADMIN_UID)loadPending()}catch(e){say("uploadStatus",e.message)}$("uploadBtn").disabled=!user}
+async function renderFiles(){let root=$("library");root.innerHTML="";try{let s=await getDocs(query(collection(db,"files"),where("status","==","approved")));if(s.empty){root.textContent="No approved files yet.";return}s.forEach(d=>{let f=d.data(),el=document.createElement("article");el.className="file";let n=document.createElement("strong");n.textContent=f.name;let st=document.createElement("div");st.className="stats";st.textContent=(f.size/1048576).toFixed(2)+" MB · "+(f.views||0)+" views · "+(f.downloads||0)+" downloads";let v=document.createElement("button");v.className="secondary";v.textContent="View details";v.onclick=async()=>{try{await updateDoc(doc(db,"files",d.id),{views:increment(1)});st.textContent=(f.size/1048576).toFixed(2)+" MB · "+((f.views||0)+1)+" views · "+(f.downloads||0)+" downloads"}catch(e){say("message",e.message)}};let b=document.createElement("button");b.textContent="Download";b.disabled=!user;b.onclick=async()=>{try{let url=await getDownloadURL(ref(storage,f.path));await updateDoc(doc(db,"files",d.id),{downloads:increment(1)});let a=document.createElement("a");a.href=url;a.download=f.name;a.click();st.textContent=(f.size/1048576).toFixed(2)+" MB · "+(f.views||0)+" views · "+((f.downloads||0)+1)+" downloads"}catch(e){say("message",e.message)}};el.append(n,st,v,b);root.append(el)})}catch(e){root.textContent="Could not load files: "+e.message}}
+function listenChat(){let q=query(collection(db,"chatMessages"),orderBy("createdAt","desc"),limit(60));stopChat=onSnapshot(q,s=>{let root=$("chat");root.innerHTML="";[...s.docs].reverse().forEach(d=>{let m=d.data(),el=document.createElement("div");el.className="msg";let n=document.createElement("strong");n.textContent=m.displayName||"Member";let t=document.createElement("div");t.textContent=m.text||"";let tm=document.createElement("small");tm.textContent=m.createdAt?.toDate?m.createdAt.toDate().toLocaleString():"Just now";el.append(n,t,tm);root.append(el)});root.scrollTop=root.scrollHeight},e=>say("chatStatus",e.message))}
+async function sendMessage(){let t=$("chatText").value.trim();if(!t||!user)return;$("sendChat").disabled=true;try{let p=await getDoc(doc(db,"profiles",user.uid));await addDoc(collection(db,"chatMessages"),{uid:user.uid,displayName:p.exists()?p.data().displayName:(user.displayName||"Member"),text:t,createdAt:serverTimestamp()});$("chatText").value="";say("chatStatus","Message sent.")}catch(e){say("chatStatus",e.message)}$("sendChat").disabled=false}
+async function loadPending(){let root=$("pending");root.innerHTML="";try{let s=await getDocs(query(collection(db,"files"),where("status","==","pending")));if(s.empty){root.textContent="No pending files.";return}s.forEach(d=>{let f=d.data(),el=document.createElement("article");el.className="file";let n=document.createElement("strong");n.textContent=f.name;let b=document.createElement("button");b.textContent="Approve";b.onclick=async()=>{await updateDoc(doc(db,"files",d.id),{status:"approved"});loadPending();renderFiles()};let x=document.createElement("button");x.className="secondary";x.textContent="Reject";x.onclick=async()=>{await deleteObject(ref(storage,f.path));await deleteDoc(doc(db,"files",d.id));loadPending()};el.append(n,b,x);root.append(el)})}catch(e){root.textContent=e.message}}
+}
+</script></body></html>
