@@ -77,6 +77,105 @@ body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636
     </div>
   </section>
 
+  <section class="section" id="billboard"><div class="panel"><h2>Billboard</h2><p class="muted">Featured updates and announcements from Naru Higure Hub.</p><div class="quick-card"><strong>Welcome to Naru Higure File Hub</strong><p>VPN files, group links and channel links in one place.</p></div></div></section>
+  <section class="section" id="groups"><div class="panel"><h2>Group Links</h2><p class="muted">Join the official community group.</p><div class="quick-card"><strong>ECONET & NETONE VPN Community</strong><p>Open the WhatsApp group using the link below.</p><a href="https://chat.whatsapp.com/J4SShNGs5da1d2rRdbA1Ka?s=cl&p=a&iam=2" target="_blank" rel="noopener">Join WhatsApp group →</a></div></div></section>
+  <section class="section" id="channels"><div class="panel"><h2>Channel Links</h2><p class="muted">Follow the owner channel for updates.</p><div class="quick-card"><strong>ECONET & NETONE VPNS FREE UNLIMITED DATA</strong><p>Follow the WhatsApp channel for new posts and updates.</p><a href="https://whatsapp.com/channel/0029Vb6gqSHGpLHRByWpRx0L" target="_blank" rel="noopener">Follow WhatsApp channel →</a></div></div></section>
+  <section class="section" id="community"><div class="panel">
+    <h2>Community Chat</h2><p class="muted">Sign in to join the conversation.</p>
+    <div id="community-messages" class="file-list"><p class="muted">Community messages will appear here.</p></div>
+    <form id="community-form"><label>Write a message<input id="community-message" maxlength="1000" placeholder="Type your message..." required></label><button class="primary" type="submit">Send message</button><p id="community-status" class="status"></p></form>
+    </div></section>
+  <section class="section" id="marketplace"><div class="panel"><h2>Marketplace</h2><p class="muted">Marketplace listings will be added here when the marketplace feature is connected.</p></div></section>
+  <section class="section" id="profile"><div class="panel">
+    <h2>My Profile</h2><p class="muted">Sign in to update your display name, about section and profile picture.</p>
+    <form id="profile-form"><label>Display name<input id="profile-name" maxlength="40" placeholder="Your display name"></label>
+    <label>About you<input id="profile-about" maxlength="180" placeholder="A short profile description"></label>
+    <label>Profile picture<input id="profile-avatar" type="file" accept="image/*"></label>
+    <button class="primary" type="submit">Save profile</button><p id="profile-status" class="status"></p></form>
+    </div><div class="panel" id="admin"><h2>Administrator Review</h2><p class="muted">Only the configured administrator can approve or reject file submissions.</p>
+    <form id="login-form" class="login-form"><label>Email<input id="admin-email" type="email" required autocomplete="username"></label><label>Password<input id="admin-password" type="password" required autocomplete="current-password"></label><button class="primary" type="submit">Admin sign in</button><button class="outline hidden" id="logout" type="button">Sign out</button></form>
+    <p id="admin-status" class="status" aria-live="polite"></p><div id="pending-list" class="file-list"></div>
+    <div class="section-head" style="margin-top:15px"><span class="muted">Refresh approved files</span><button id="refresh" class="outline" type="button">Refresh</button></div>
+  </div></section>
+</main>
+<footer>© <span id="year"></span> NARU HIGURE FILE HUB · HUB • NETWORK · Share responsibly.</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Main navigation" aria-hidden="true">
+  <div class="drawer-head"><a class="brand" href="#home"><span class="brand-mark">🚀</span><span><span class="brand-name">NARU HIGURE <em>FILE HUB</em></span><span class="brand-sub">HUB • NETWORK</span></span></a><button class="close" id="closeMenu" aria-label="Close menu">×</button></div>
+  <nav class="menu-list">
+    <a class="menu-item active" href="#home"><span class="mi">⌂</span>Home</a>
+    <a class="menu-item" href="#files"><span class="mi">▣</span>VPN Files</a>
+    <a class="menu-item" href="#billboard"><span class="mi">🏆</span>Billboard</a>
+    <a class="menu-item" href="#groups"><span class="mi">♧</span>Group Links</a>
+    <a class="menu-item" href="#channels"><span class="mi">◉</span>Channel Links</a>
+    <a class="menu-item" href="#community"><span class="mi">▤</span>Community</a>
+    <a class="menu-item" href="#marketplace"><span class="mi">▢</span>Marketplace</a>
+    <a class="menu-item" href="#profile"><span class="mi">♙</span>My Profile</a>
+  </nav>
+  <a class="primary menu-submit" href="#upload"><span>＋</span> Submit to the hub</a>
+  <div class="divider"></div><div class="theme-label">THEME</div>
+  <div class="theme-picker"><span>🎨</span><button class="t-black" data-theme="dark" aria-label="Dark theme"></button><button class="t-red" data-theme="red" aria-label="Red accent"></button><button class="t-white" data-theme="light" aria-label="Light theme"></button></div>
+</aside>
+
+<div class="modal-backdrop" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+  <div class="modal"><div class="modal-top"><h2 id="accountTitle">Welcome to Naru Higure</h2><button class="close" id="closeAccount" aria-label="Close">×</button></div>
+    <div class="modal-tabs"><button class="primary" id="tabSignin" type="button">Sign in</button><button class="secondary" id="tabSignup" type="button">Create account</button></div>
+    <form id="accountSignin"><label>Email<input id="accountEmail" type="email" required autocomplete="email"></label><label>Password<input id="accountPassword" type="password" required autocomplete="current-password"></label><button class="primary" type="submit">Sign in</button></form>
+    <form id="accountSignup" class="hidden"><label>Email<input id="newEmail" type="email" required autocomplete="email"></label><label>Create password<input id="newPassword" type="password" minlength="6" required autocomplete="new-password"></label><button class="primary" type="submit">Create free account</button></form>
+    <p class="modal-note" id="accountStatus" aria-live="polite">Accounts are managed securely by Supabase. Email confirmation may be required.</p>
+  </div>
+</div>
+
+<script>
+(()=>{
+ const $=id=>document.getElementById(id),body=document.body;
+ const drawer=$('drawer');
+ function menu(open){body.classList.toggle('menu-open',open);drawer.setAttribute('aria-hidden',String(!open));}
+ $('openMenu').addEventListener('click',()=>menu(true));$('closeMenu').addEventListener('click',()=>menu(false));$('scrim').addEventListener('click',()=>menu(false));
+ drawer.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>menu(false)));
+ function setTheme(t){body.classList.toggle('light',t==='light');document.querySelector('meta[name="theme-color"]').content=t==='light'?'#f4f3f6':'#08080b';}
+ n" id="openSignin">Sign in</button>
+    <button class="icon-btn" id="openMenu" aria-label="Open menu">☰</button>
+  </div>
+</header>
+<main class="wrap" id="home">
+  <section class="hero">
+    <div class="eyebrow">PREMIUM COMMUNITY INFRASTRUCTURE</div>
+    <h1>The hub for files,<br>groups and the <span class="red">future.</span></h1>
+    <p class="lead">Files, groups, channels, community and marketplace — engineered in one hub.</p>
+    <form class="search" id="searchForm"><span class="glass">⌕</span><input id="hubSearch" type="search" placeholder="Search VPN files, guides, tools..." aria-label="Search hub"><button class="primary" type="submit">Search</button></form>
+    <div class="hero-actions">
+      <a class="secondary" href="#files"><span style="color:var(--red)">▣</span> Browse VPN files</a>
+      <a class="secondary" href="https://whatsapp.com/channel/0029Vb6gqSHGpLHRByWpRx0L" target="_blank" rel="noopener"><span style="color:var(--red)">◉</span> Follow owner channel</a>
+      <a class="primary" href="#account" id="heroSignup">Create free account <span>→</span></a>
+    </div>
+  </section>
+  <section class="stats" aria-label="Hub statistics">
+    <article class="stat"><div class="stat-icon">▣</div><div class="stat-number">14</div><div class="stat-label">VPN FILES</div></article>
+    <article class="stat"><div class="stat-icon">♧</div><div class="stat-number">1</div><div class="stat-label">GROUPS</div></article>
+    <article class="stat"><div class="stat-icon">◉</div><div class="stat-number">2</div><div class="stat-label">CHANNELS</div></article>
+    <article class="stat"><div class="stat-icon">▤</div><div class="stat-number">14</div><div class="stat-label">COMMUNITY POSTS</div></article>
+  </section>
+
+  <section class="section" id="files">
+    <div class="section-head"><div><h2>VPN Files</h2><p class="muted">Browse approved community configuration files.</p></div><span class="eyebrow">PUBLIC LIBRARY</span></div>
+    <div class="panel"><div id="file-list" class="file-list"><p class="muted">Loading approved files…</p></div><p id="search-empty" class="status hidden">No matching files found.</p></div>
+  </section>
+
+  <section class="section" id="upload">
+    <div class="panel">
+      <h2>Submit to the hub</h2><p class="muted">Share a VPN configuration. Submissions stay pending until approved by the administrator.</p>
+      <form id="upload-form">
+        <label>Your display name<input id="uploader" maxlength="40" placeholder="Optional"></label>
+        <label>File title<input id="title" maxlength="80" required placeholder="e.g. My VPN configuration"></label>
+        <label>Choose file <span class="muted">(HA Tunnel, HTTP Custom, V2Box, NPVS, OVPN, JSON, CONF, TXT and other file types)</span><input id="file" type="file" accept="*/*" required></label>
+        <button class="primary" type="submit">Submit for approval</button><p id="upload-status" class="status" aria-live="polite"></p>
+      </form>
+      <p class="warning">Only upload files you own or have permission to share. Remove passwords, private keys and personal credentials first.</p>
+    </div>
+  </section>
+
   <section class="section" id="billboard"><div class="panel"><h2>Billboard</h2><p class="muted">Featured updates and announcements from Naru Higure File Hub.</p><div class="quick-card"><strong>Welcome to Naru Higure File Hub</strong><p>VPN files, group links and channel links in one place.</p></div></div></section>
   <section class="section" id="groups"><div class="panel"><h2>Group Links</h2><p class="muted">Join the official community group.</p><div class="quick-card"><strong>ECONET & NETONE VPN Community</strong><p>Open the WhatsApp group using the link below.</p><a href="https://chat.whatsapp.com/J4SShNGs5da1d2rRdbA1Ka?s=cl&p=a&iam=2" target="_blank" rel="noopener">Join WhatsApp group →</a></div></div></section>
   <section class="section" id="channels"><div class="panel"><h2>Channel Links</h2><p class="muted">Follow the owner channel for updates.</p><div class="quick-card"><strong>ECONET & NETONE VPNS FREE UNLIMITED DATA</strong><p>Follow the WhatsApp channel for new posts and updates.</p><a href="https://whatsapp.com/channel/0029Vb6gqSHGpLHRByWpRx0L" target="_blank" rel="noopener">Follow WhatsApp channel →</a></div></div></section>
