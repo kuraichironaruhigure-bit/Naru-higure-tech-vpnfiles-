@@ -1,33 +1,31 @@
-NARU HIGURE FILE HUB — COMPLETE WEBSITE UPDATE
+NARU HIGURE FILE HUB — COUNTRY FILTER + ADMIN DELETE + 24-HOUR CHAT UPDATE
 
-FILES
-- index.html: website pages and black/red design
-- app.js: Supabase sign-in, downloads, uploads, profiles, chat, stats, admin approval
-- supabase-setup.sql: database tables, storage buckets, RLS policies, counters, owner admin role
+This is a minimal update to the existing NARU HIGURE FILE HUB. It keeps the current page design, navigation, login, profiles, uploads, download flow, community, and WhatsApp links.
 
-GITHUB INSTALL
-1. Open your repository: https://github.com/kuraichironaruhigure-bit/Naru-higure-tech-vpnfiles-
-2. Replace the repository index.html with this index.html.
-3. Replace the repository app.js with this app.js.
-4. Keep manifest.json, service worker files, and icons already in your repository.
+FILES IN THIS ZIP
+- index.html — adds country selectors to VPN Files and file submission.
+- app.js — filters approved files by country, saves the selected country, and lets the administrator delete files.
+- supabase-setup.sql — adds the country column, administrator-only storage deletion permission, and automatic 24-hour chat cleanup.
+
+INSTALL ON THE EXISTING GITHUB REPOSITORY
+1. Download and extract this ZIP.
+2. Open the existing repository: https://github.com/kuraichironaruhigure-bit/Naru-higure-tech-vpnfiles-
+3. Replace only index.html and app.js in the repository root with the files from this ZIP.
+4. Keep your existing manifest.json, service worker, icons, and all other repository files unchanged.
 5. Commit the changes.
 
-SUPABASE INSTALL
-1. Open https://supabase.com/dashboard/project/vmiihzuzdiheyrhmpcor/sql/new
-2. Paste the entire supabase-setup.sql and click Run.
-3. If the admin account has not been created yet, sign up on the website using kuraichironaruhigure@gmail.com, then run the SQL script again so the account receives the admin role.
-4. In Supabase Authentication > URL Configuration, add the GitHub Pages website URL to Site URL / Redirect URLs if email confirmation is enabled.
-5. Keep the vpn-files bucket private. The SQL sets this automatically.
+DATABASE UPDATE
+1. Open the existing Supabase SQL Editor: https://supabase.com/dashboard/project/vmiihzuzdiheyrhmpcor/sql/new
+2. Run the complete supabase-setup.sql file in one query. It is designed to be re-run and preserves existing file records.
+3. The migration sets existing files to country “Other”. The administrator can assign a country to each existing approved file using the country selector shown on its file card. New submissions must choose a country.
+4. The SQL enables pg_cron and schedules expired chat cleanup every minute. Messages older than 24 hours are excluded from chat immediately and permanently deleted by the scheduled database job, normally within about one minute after reaching 24 hours. If the Supabase project does not permit pg_cron, enable it in Supabase Database > Extensions and run the SQL again.
 
-SECURITY / FEATURES
-- Only signed-in users can download approved files; files are stored in a private bucket and downloaded with short-lived signed URLs.
-- Only signed-in users can upload; submissions remain pending until administrator approval.
-- Only the owner account with app_metadata.role=admin can approve/reject.
-- Chat reads and writes require authentication (enforced by RLS).
-- Users can edit their own profile and upload an avatar.
-- Public file cards show per-file views/downloads and aggregate totals.
-- Home opens with the welcome message and sign-in prompt; navigation opens individual pages.
-- WhatsApp group/channel links are preserved.
+ADMINISTRATOR
+- The existing administrator remains kuraichironaruhigure@gmail.com and must have app_metadata.role=admin.
+- Only the administrator can see and use Delete buttons for approved and pending files.
+- File deletion removes the object from the private vpn-files storage bucket and then deletes its database record.
 
-IMPORTANT
-The code is prepared from your latest saved source files but has not been deployed to GitHub or live-tested against your Supabase project. The Marketplace page is a placeholder because you have not specified listing/payment rules. Never put a Supabase service-role key in browser code.
+LIVE WEBSITE
+https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/
+
+This ZIP has been syntax-checked and its archive contents verified, but it has not been deployed or tested against the live Supabase project. No changes have been made to GitHub or Supabase from this package build.

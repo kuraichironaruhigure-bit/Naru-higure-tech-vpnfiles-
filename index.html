@@ -66,7 +66,14 @@ body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636
   <section class="section" id="files">
     <div class="section-head"><div><h2>VPN Files</h2><p class="muted">Browse approved community configuration files.</p></div><span class="eyebrow">PUBLIC LIBRARY</span></div>
     <div class="quick-grid" style="margin-bottom:14px"><div class="quick-card"><strong id="total-views">0</strong><p>Total file views</p></div><div class="quick-card"><strong id="total-downloads">0</strong><p>Total downloads</p></div></div>
-    <div class="panel"><div id="file-list" class="file-list"><p class="muted">Loading approved files…</p></div><p id="search-empty" class="status hidden">No matching files found.</p></div>
+    <div class="panel">
+      <label for="country-filter">Choose a country</label>
+      <select id="country-filter" aria-label="Filter VPN files by country" style="width:100%;max-width:420px;padding:12px;border-radius:10px;background:#101015;color:var(--text);border:1px solid #34313a;margin:8px 0 14px">
+        <option value="All">All countries</option>
+        <option value="Other">Other / Not assigned</option>
+      </select>
+      <div id="file-list" class="file-list"><p class="muted">Loading approved files…</p></div><p id="search-empty" class="status hidden">No matching files found.</p>
+    </div>
   </section>
 
   <section class="section" id="upload">
@@ -76,6 +83,11 @@ body.light{--bg:#f4f3f6;--panel:#fff;--panel2:#eee;--text:#17151a;--muted:#68636
       <form id="upload-form" class="hidden">
         <label>Your display name<input id="uploader" maxlength="40" placeholder="Optional"></label>
         <label>File title<input id="title" maxlength="80" required placeholder="e.g. My VPN configuration"></label>
+        <label>Country
+          <select id="file-country" required style="width:100%;padding:12px;border-radius:10px;background:#101015;color:var(--text);border:1px solid #34313a">
+            <option value="">Select the file's country</option>
+          </select>
+        </label>
         <label>Choose file <span class="muted">(HA Tunnel, HTTP Custom, V2Box, NPVS, OVPN, JSON, CONF, TXT and other file types)</span><input id="file" type="file" accept="*/*" required></label>
         <button class="primary" type="submit">Submit for approval</button><p id="upload-status" class="status" aria-live="polite"></p>
       </form>
