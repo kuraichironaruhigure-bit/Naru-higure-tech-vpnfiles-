@@ -1,389 +1,311 @@
-
-/* NARU HIGURE FILE HUB — compatible with the supplied index.html and Supabase schema */
+/* NARU HIGURE FILE HUB — repaired client script. Uses only the Supabase public key. */
 (() => {
   'use strict';
-
   const SUPABASE_URL = 'https://vmiihzuzdiheyrhmpcor.supabase.co';
-  // This is the project's public publishable key already used by the supplied index.html.
-  // Never put a Supabase service-role/secret key in browser code.
   const SUPABASE_KEY = 'sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov';
   const FILE_BUCKET = 'vpn-files';
   const AVATAR_BUCKET = 'profile-avatars';
-  const $ = (id) => document.getElementById(id);
-  const requiredIds = ['file-list', 'upload-form', 'community-form', 'community-messages', 'profile-form', 'login-form'];
-  if (requiredIds.some((id) => !$(id))) {
-    console.error('NARU HUB: The page HTML does not match the expected File Hub layout.');
-    return;
-  }
-  if (!window.supabase?.createClient) {
-    $('file-list').textContent = 'Supabase did not load. Check your internet connection and refresh.';
-    return;
-  }
+  const $ = id => document.getElementById(id);
+  const setText = (id, value) => { const el=$(id); if(el) el.textContent=String(value ?? ''); };
+  const show = (id, yes) => { const el=$(id); if(el) el.classList.toggle('hidden', !yes); };
+  const status = (id, value) => setText(id, value);
+  const viewed = new Set();
+  let db=null, currentUser=null, isAdmin=false, approvedFiles=[];
+  let selectedCountry='All countries';
+  const escapeHTML = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  const db = window.naruSupabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-  });
-  window.naruSupabase = db;
-  const viewedThisPage = new Set();
-  let currentUser = null;
-  let isAdmin = false;
-  let selectedCountry = 'All countries';
-
-  const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
-  const setText = (id, value) => { if ($(id)) $(id).textContent = value; };
-  const status = (id, message) => setText(id, message);
-
-  // Add country controls inside the existing panels; no page redesign is needed.
-  function ensureCountryControls() {
-    const filePanel = $('file-list').parentElement;
-    if (!$('country-filter')) {
-      const wrap = document.createElement('label');
-      wrap.className = 'country-control';
-      wrap.style.cssText = 'display:block;margin:0 0 12px;max-width:260px';
-      wrap.innerHTML = 'Filter by country<select id="country-filter" class="outline" style="display:block;width:100%;margin-top:6px"><option>All countries</option><option>Zimbabwe</option><option>South Africa</option><option>Botswana</option><option>Zambia</option><option>Other</option></select>';
-      filePanel.insertBefore(wrap, $('file-list'));
-      $('country-filter').addEventListener('change', () => {
-        selectedCountry = $('country-filter').value;
-        loadApprovedFiles();
-      });
+  function initClient(){
+    if (!window.supabase?.createClient) {
+      const target=$('file-list'); if(target) target.textContent='Supabase did not load. Check your internet connection and refresh.';
+      return false;
     }
-    if (!$('upload-country')) {
-      const label = document.createElement('label');
-      label.innerHTML = 'Country<select id="upload-country" required><option value="Zimbabwe">Zimbabwe</option><option value="South Africa">South Africa</option><option value="Botswana">Botswana</option><option value="Zambia">Zambia</option><option value="Other">Other</option></select>';
-      $('upload-form').insertBefore(label, $('upload-form').querySelector('button[type="submit"]'));
-    }
-  }
-  ensureCountryControls();
-
-  async function recordAutomaticView(file, viewLabel) {
-    if (!file?.id || viewedThisPage.has(file.id)) return;
-    viewedThisPage.add(file.id);
-    const { error } = await db.rpc('record_file_view', { file_id: file.id });
-    if (error) {
-      viewedThisPage.delete(file.id);
-      console.warn('Automatic file view was not recorded:', error.message);
-      return;
-    }
-    if (viewLabel) {
-      const updatedCount = Number(file.view_count || 0) + 1;
-      viewLabel.textContent = `${file.file_name || 'File'} · ${file.uploader || 'Community member'} · ${file.country || 'Zimbabwe'} · ${updatedCount} views`;
-    }
-  }
-
-  async function loadApprovedFiles() {
-    const box = $('file-list');
-    box.innerHTML = '<p class="muted">Loading approved files…</p>';
-    let query = db.from('vpn_submissions')
-      .select('id,title,uploader,file_name,file_size,storage_path,country,view_count,download_count,created_at')
-      .eq('status', 'approved').order('created_at', { ascending: false });
-    if (selectedCountry !== 'All countries') query = query.eq('country', selectedCountry);
-    let result = await query;
-    // Graceful fallback for an older table that has not received the country column yet.
-    if (result.error && /country/i.test(result.error.message)) {
-      let fallback = db.from('vpn_submissions')
-        .select('id,title,uploader,file_name,file_size,storage_path,view_count,download_count,created_at')
-        .eq('status', 'approved').order('created_at', { ascending: false });
-      result = await fallback;
-      if (selectedCountry !== 'All countries') {
-        box.innerHTML = '<p class="muted">Country filtering needs the country-column SQL update. Run the supplied country update in Supabase first.</p>';
-        return;
-      }
-    }
-    if (result.error) {
-      box.textContent = 'Could not load files: ' + result.error.message;
-      return;
-    }
-    const files = result.data || [];
-    box.innerHTML = '';
-    if (!files.length) {
-      box.innerHTML = '<p class="muted">No approved files found for this country.</p>';
-      return;
-    }
-    for (const file of files) {
-      const row = document.createElement('div');
-      row.className = 'file-row';
-      const info = document.createElement('div');
-      const title = document.createElement('b');
-      title.textContent = file.title || file.file_name || 'VPN file';
-      const detail = document.createElement('small');
-      detail.textContent = `${file.file_name || 'File'} · ${file.uploader || 'Community member'} · ${file.country || 'Zimbabwe'} · ${Number(file.view_count || 0)} views`;
-      info.append(title, detail);
-      const actions = document.createElement('div');
-      actions.className = 'file-actions';
-      const download = document.createElement('button');
-      download.type = 'button';
-      download.className = 'outline';
-      download.textContent = 'Download';
-      download.addEventListener('click', () => downloadFile(file));
-      // Deliberately no View button. A view is counted as soon as this card is rendered.
-      actions.append(download);
-      row.append(info, actions);
-      box.append(row);
-      void recordAutomaticView(file, detail);
-    }
-  }
-
-  async function downloadFile(file) {
-    if (!currentUser) {
-      alert('Please sign in before downloading files.');
-      if (location.hash !== '#signin') location.hash = '#signin';
-      return;
-    }
-    const path = file.storage_path || file.file_path;
-    if (!path) return alert('This file has no storage path. Please contact the administrator.');
-    const { data, error } = await db.storage.from(FILE_BUCKET).createSignedUrl(path, 90);
-    if (error) return alert('Download failed: ' + error.message);
-    await db.rpc('record_file_download', { file_id: file.id });
-    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
-  }
-
-  async function loadCommunity() {
-    const box = $('community-messages');
-    if (!currentUser) {
-      box.innerHTML = '<p class="muted">Please sign in to view and send community messages.</p>';
-      status('community-status', 'Sign in to use the community.');
-      return;
-    }
-    const { data, error } = await db.from('community_posts')
-      .select('id,user_id,message,created_at')
-      .order('created_at', { ascending: false }).limit(100);
-    if (error) {
-      box.textContent = 'Could not load community messages: ' + error.message;
-      return;
-    }
-    box.innerHTML = '';
-    if (!data?.length) {
-      box.innerHTML = '<p class="muted">No community messages yet. Start the conversation.</p>';
-      return;
-    }
-    for (const post of data) {
-      const row = document.createElement('div');
-      row.className = 'file-row';
-      const content = document.createElement('div');
-      const message = document.createElement('b');
-      message.style.whiteSpace = 'pre-wrap';
-      message.textContent = post.message;
-      const when = document.createElement('small');
-      when.textContent = new Date(post.created_at).toLocaleString();
-      content.append(message, when);
-      row.append(content);
-      box.append(row);
-    }
-  }
-
-  $('community-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!currentUser) return status('community-status', 'Please sign in first.');
-    const input = $('community-message');
-    const message = input.value.trim();
-    if (!message) return;
-    status('community-status', 'Sending…');
-    const { error } = await db.from('community_posts').insert({ user_id: currentUser.id, message });
-    if (error) return status('community-status', error.message);
-    input.value = '';
-    status('community-status', 'Message sent.');
-    await loadCommunity();
-  });
-
-  async function loadProfile() {
-    if (!currentUser) {
-      status('profile-status', 'Sign in to edit your profile.');
-      return;
-    }
-    const { data, error } = await db.from('profiles').select('display_name,about').eq('id', currentUser.id).maybeSingle();
-    if (error) return status('profile-status', error.message);
-    if (data) {
-      $('profile-name').value = data.display_name || '';
-      $('profile-about').value = data.about || '';
-    }
-  }
-
-  $('profile-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!currentUser) return status('profile-status', 'Please sign in first.');
-    status('profile-status', 'Saving profile…');
-    let avatar_url;
-    const avatar = $('profile-avatar').files?.[0];
-    if (avatar) {
-      if (!avatar.type.startsWith('image/')) return status('profile-status', 'Choose an image file.');
-      const path = `${currentUser.id}/${crypto.randomUUID()}-${avatar.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-      const uploaded = await db.storage.from(AVATAR_BUCKET).upload(path, avatar, { upsert: true });
-      if (uploaded.error) return status('profile-status', uploaded.error.message);
-      const publicResult = db.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-      avatar_url = publicResult.data.publicUrl;
-    }
-    const profile = {
-      id: currentUser.id,
-      display_name: $('profile-name').value.trim() || 'Community member',
-      about: $('profile-about').value.trim(),
-      updated_at: new Date().toISOString()
-    };
-    if (avatar_url) profile.avatar_url = avatar_url;
-    const { error } = await db.from('profiles').upsert(profile, { onConflict: 'id' });
-    status('profile-status', error ? error.message : 'Profile saved.');
-  });
-
-  // Uploads must be stored under the signed-in user's folder and include user_id,
-  // because the supplied Supabase RLS policies enforce both conditions.
-  $('upload-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!currentUser) return status('upload-status', 'Please sign in before submitting a file.');
-    const file = $('file').files?.[0];
-    if (!file) return status('upload-status', 'Choose a file first.');
-    if (file.size > 50 * 1024 * 1024) return status('upload-status', 'Maximum file size is 50 MB.');
-    const title = $('title').value.trim();
-    if (!title) return status('upload-status', 'Enter a file title.');
-    status('upload-status', 'Uploading…');
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const path = `${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
-    const uploaded = await db.storage.from(FILE_BUCKET).upload(path, file, { upsert: false });
-    if (uploaded.error) return status('upload-status', uploaded.error.message);
-    const record = {
-      title,
-      uploader: $('uploader').value.trim() || 'Community member',
-      file_name: file.name,
-      file_size: file.size,
-      storage_path: path,
-      user_id: currentUser.id,
-      status: 'pending',
-      country: $('upload-country')?.value || 'Zimbabwe'
-    };
-    const saved = await db.from('vpn_submissions').insert(record);
-    if (saved.error) {
-      await db.storage.from(FILE_BUCKET).remove([path]);
-      return status('upload-status', saved.error.message);
-    }
-    $('upload-form').reset();
-    status('upload-status', 'File submitted. It will appear after administrator approval.');
-  });
-
-  async function loadPending() {
-    if (!isAdmin) return;
-    const box = $('pending-list');
-    const { data, error } = await db.from('vpn_submissions').select('*')
-      .eq('status', 'pending').order('created_at', { ascending: true });
-    if (error) { box.textContent = error.message; return; }
-    box.innerHTML = '<h3>Pending submissions</h3>';
-    if (!data?.length) { box.innerHTML += '<p class="muted">Nothing waiting for review.</p>'; return; }
-    for (const file of data) {
-      const row = document.createElement('div'); row.className = 'file-row';
-      const info = document.createElement('div');
-      const name = document.createElement('b'); name.textContent = file.title || file.file_name;
-      const detail = document.createElement('small'); detail.textContent = `${file.file_name} · ${file.country || 'Zimbabwe'} · ${file.uploader || 'Member'}`;
-      info.append(name, detail);
-      const actions = document.createElement('div'); actions.className = 'file-actions';
-      for (const [label, nextStatus] of [['Approve', 'approved'], ['Reject', 'rejected']]) {
-        const button = document.createElement('button'); button.type = 'button'; button.className = 'outline'; button.textContent = label;
-        button.addEventListener('click', async () => {
-          const { error: updateError } = await db.from('vpn_submissions').update({ status: nextStatus }).eq('id', file.id);
-          if (updateError) alert(updateError.message);
-          else { await loadPending(); await loadApprovedFiles(); }
-        });
-        actions.append(button);
-      }
-      row.append(info, actions); box.append(row);
-    }
-  }
-
-  async function loadAdminFiles() {
-    if (!isAdmin) return;
-    const box = $('pending-list');
-    const { data, error } = await db.from('vpn_submissions').select('*')
-      .eq('status', 'approved').order('created_at', { ascending: false });
-    if (error) return;
-    const heading = document.createElement('h3'); heading.textContent = 'Approved files · Admin delete'; box.append(heading);
-    for (const file of (data || [])) {
-      const row = document.createElement('div'); row.className = 'file-row';
-      const info = document.createElement('div');
-      const name = document.createElement('b'); name.textContent = file.title || file.file_name;
-      const small = document.createElement('small'); small.textContent = file.file_name || '';
-      info.append(name, small);
-      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'outline'; remove.textContent = 'Delete';
-      remove.addEventListener('click', async () => {
-        if (!confirm(`Delete “${file.title || file.file_name}”? This cannot be undone.`)) return;
-        const path = file.storage_path || file.file_path;
-        if (path) {
-          const storageDelete = await db.storage.from(FILE_BUCKET).remove([path]);
-          if (storageDelete.error) return alert('Could not delete stored file: ' + storageDelete.error.message);
-        }
-        const { error: rowError } = await db.from('vpn_submissions').delete().eq('id', file.id);
-        if (rowError) return alert('Could not delete file record: ' + rowError.message);
-        await loadAdminPanel();
-        await loadApprovedFiles();
-      });
-      row.append(info, remove); box.append(row);
-    }
-  }
-
-  async function loadAdminPanel() {
-    $('pending-list').innerHTML = '';
-    await loadPending();
-    await loadAdminFiles();
-  }
-
-  $('login-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    status('admin-status', 'Signing in…');
-    const { error } = await db.auth.signInWithPassword({
-      email: $('admin-email').value.trim(),
-      password: $('admin-password').value
+    db = window.naruSupabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
     });
-    if (error) status('admin-status', error.message);
-  });
+    window.naruSupabase=db;
+    return true;
+  }
 
-  $('logout').addEventListener('click', async () => {
-    const { error } = await db.auth.signOut();
-    if (error) status('admin-status', error.message);
-  });
-
-  $('refresh').addEventListener('click', loadApprovedFiles);
-
-  async function applySession(session) {
-    currentUser = session?.user || null;
-    isAdmin = currentUser?.app_metadata?.role === 'admin';
-    const logout = $('logout');
-    if (logout) logout.classList.toggle('hidden', !isAdmin);
-    if ($('login-form')) $('login-form').classList.toggle('hidden', isAdmin);
-    if (isAdmin) {
-      status('admin-status', `Administrator signed in: ${currentUser.email || ''}`);
-      await loadAdminPanel();
-    } else {
-      if ($('login-form')) $('login-form').classList.remove('hidden');
-      if ($('pending-list')) $('pending-list').innerHTML = '';
-      status('admin-status', currentUser ? 'Signed in as a member. Administrator access is restricted.' : '');
+  function ensureCountryControls(){
+    const filter=$('country-filter');
+    if(filter){
+      selectedCountry=filter.value || 'All countries';
+      if(selectedCountry==='All') selectedCountry='All countries';
+      filter.addEventListener('change',()=>{selectedCountry=filter.value;renderFiles();});
     }
-    if (currentUser) {
-      status('community-status', 'You are signed in.');
-      await loadCommunity();
-      await loadProfile();
-    } else {
-      await loadCommunity();
-      status('profile-status', 'Sign in to edit your profile.');
+    const uploadForm=$('upload-form');
+    if(uploadForm && !$('file-country')){
+      const label=document.createElement('label');
+      label.textContent='Country';
+      const select=document.createElement('select'); select.id='file-country'; select.required=true;
+      select.innerHTML='<option value="Zimbabwe">Zimbabwe</option><option value="South Africa">South Africa</option><option value="Botswana">Botswana</option><option value="Zambia">Zambia</option><option value="Mozambique">Mozambique</option><option value="Other">Other</option>';
+      label.appendChild(select);
+      const submit=uploadForm.querySelector('[type="submit"]');
+      uploadForm.insertBefore(label,submit || null);
+    }
+    if(filter && filter.options.length<=2){
+      const known=['All countries','Zimbabwe','South Africa','Botswana','Zambia','Mozambique','Other'];
+      filter.innerHTML=known.map(x=>`<option value="${escapeHTML(x)}">${escapeHTML(x)}</option>`).join('');
+      filter.value=selectedCountry;
     }
   }
 
-  // The account sign-in/sign-up forms are already wired in index.html.
-  // Listen for the shared Supabase session so Community/Profile update immediately.
-  db.auth.onAuthStateChange((_event, session) => {
-    setTimeout(() => { void applySession(session); }, 0);
-  });
-
-  $('year').textContent = new Date().getFullYear();
-  void loadApprovedFiles();
-  db.auth.getSession().then(({ data, error }) => {
-    if (error) console.error('Could not restore sign-in session:', error.message);
-    void applySession(data?.session || null);
-  });
-
-  // Realtime refresh when community messages are added. The UI remains usable without Realtime.
-  try {
-    db.channel('naru-hub-community-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'community_posts' }, () => {
-        if (currentUser) void loadCommunity();
-      }).subscribe();
-  } catch (error) {
-    console.warn('Community live refresh is unavailable:', error);
+  function updateAuthUI(){
+    const signed=!!currentUser;
+    show('upload-gate',!signed); show('community-gate',!signed); show('profile-gate',!signed);
+    show('upload-form',signed); show('community-form',signed); show('profile-form',signed);
+    show('community-messages',signed);
+    show('user-logout',signed);
+    if($('openSignin')) $('openSignin').textContent=signed?'Account':'Sign in';
+    if(!signed){
+      status('community-status','Sign in to use the community.');
+      status('profile-status','Sign in to edit your profile.');
+      status('upload-status','Sign in to submit a file.');
+      show('admin',false); show('admin-gate',false); show('admin-menu-link',false);
+    } else {
+      status('community-status','');
+      if(isAdmin){show('admin',true);show('admin-gate',false);show('admin-menu-link',true);}
+      else {show('admin',false);show('admin-gate',true);show('admin-menu-link',false);}
+    }
   }
+
+  async function refreshSession(){
+    const {data,error}=await db.auth.getSession();
+    if(error) console.warn('Session check:',error.message);
+    currentUser=data?.session?.user || null;
+    isAdmin=currentUser?.app_metadata?.role==='admin';
+    updateAuthUI();
+    if(currentUser){await Promise.all([loadCommunity(),loadProfile()]);}
+    if(isAdmin) await loadPending();
+  }
+
+  function setStats(files){
+    const views=files.reduce((n,f)=>n+Number(f.view_count||0),0);
+    const downloads=files.reduce((n,f)=>n+Number(f.download_count||0),0);
+    if($('total-views')) setText('total-views',views.toLocaleString());
+    if($('total-downloads')) setText('total-downloads',downloads.toLocaleString());
+  }
+
+  async function recordAutomaticView(file, label){
+    if(!file?.id || viewed.has(file.id)) return;
+    viewed.add(file.id);
+    const {error}=await db.rpc('record_file_view',{file_id:file.id});
+    if(error){viewed.delete(file.id);console.warn('Automatic view not recorded:',error.message);return;}
+    file.view_count=Number(file.view_count||0)+1;
+    if(label) label.textContent=`${file.file_name||'File'} · ${file.uploader||'Community member'} · ${file.country||'Zimbabwe'} · ${file.view_count} views`;
+    setStats(approvedFiles);
+  }
+
+  async function fetchApproved(){
+    let q=db.from('vpn_submissions').select('id,title,uploader,file_name,file_size,storage_path,file_path,country,view_count,download_count,created_at').eq('status','approved').order('created_at',{ascending:false});
+    let result=await q;
+    if(result.error && /country/i.test(result.error.message)){
+      result=await db.from('vpn_submissions').select('id,title,uploader,file_name,file_size,storage_path,file_path,view_count,download_count,created_at').eq('status','approved').order('created_at',{ascending:false});
+      if(!result.error) result.data=(result.data||[]).map(f=>({...f,country:'Zimbabwe'}));
+    }
+    return result;
+  }
+
+  function renderFiles(){
+    const box=$('file-list'); if(!box) return;
+    const files=selectedCountry==='All countries' ? approvedFiles : approvedFiles.filter(f=>(f.country||'Zimbabwe')===selectedCountry);
+    box.innerHTML='';
+    if(!files.length){box.innerHTML='<p class="muted">No approved files found for this country.</p>';return;}
+    for(const file of files){
+      const row=document.createElement('article'); row.className='file-row';
+      const info=document.createElement('div');
+      const title=document.createElement('b'); title.textContent=file.title||file.file_name||'VPN file';
+      const detail=document.createElement('small'); detail.textContent=`${file.file_name||'File'} · ${file.uploader||'Community member'} · ${file.country||'Zimbabwe'} · ${Number(file.view_count||0)} views`;
+      info.append(title,detail);
+      const actions=document.createElement('div'); actions.className='file-actions';
+      const download=document.createElement('button'); download.type='button'; download.className='outline'; download.textContent='Download'; download.addEventListener('click',()=>downloadFile(file));
+      actions.append(download);
+      if(isAdmin){const del=document.createElement('button');del.type='button';del.className='outline';del.textContent='Delete';del.addEventListener('click',()=>deleteFile(file));actions.append(del);}
+      row.append(info,actions); box.append(row);
+      // Count a view automatically when the approved card is rendered; no View button.
+      void recordAutomaticView(file,detail);
+    }
+  }
+
+  async function loadApprovedFiles(){
+    const box=$('file-list'); if(box) box.innerHTML='<p class="muted">Loading approved files…</p>';
+    const {data,error}=await fetchApproved();
+    if(error){if(box) box.textContent='Could not load files: '+error.message;return;}
+    approvedFiles=data||[];
+    // Populate real country choices without removing the supplied All/Other options.
+    const filter=$('country-filter');
+    if(filter){
+      const current=selectedCountry;
+      const countries=[...new Set(approvedFiles.map(f=>f.country||'Zimbabwe').filter(Boolean))].sort();
+      const opts=['All countries',...countries]; if(!opts.includes('Other')) opts.push('Other');
+      filter.innerHTML=opts.map(x=>`<option value="${escapeHTML(x)}">${escapeHTML(x)}</option>`).join('');
+      filter.value=opts.includes(current)?current:'All countries'; selectedCountry=filter.value;
+    }
+    setStats(approvedFiles); renderFiles();
+  }
+
+  async function downloadFile(file){
+    if(!currentUser){openAccount('signin');return;}
+    const path=file.storage_path||file.file_path;
+    if(!path){alert('This file has no storage path. Contact the administrator.');return;}
+    const {data,error}=await db.storage.from(FILE_BUCKET).createSignedUrl(path,120);
+    if(error){alert('Download failed: '+error.message);return;}
+    const counted=await db.rpc('record_file_download',{file_id:file.id});
+    if(counted.error) console.warn('Download count was not recorded:',counted.error.message);
+    file.download_count=Number(file.download_count||0)+1; setStats(approvedFiles);
+    window.open(data.signedUrl,'_blank','noopener,noreferrer');
+  }
+
+  async function uploadFile(event){
+    event.preventDefault(); if(!currentUser){status('upload-status','Please sign in first.');return;}
+    const file=$('file')?.files?.[0]; if(!file){status('upload-status','Choose a file first.');return;}
+    if(file.size>50*1024*1024){status('upload-status','File is larger than 50 MB.');return;}
+    const title=$('title')?.value?.trim(); if(!title){status('upload-status','Enter a file title.');return;}
+    const country=$('file-country')?.value || 'Zimbabwe';
+    status('upload-status','Uploading your file…');
+    const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path=`${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
+    const uploaded=await db.storage.from(FILE_BUCKET).upload(path,file,{upsert:false});
+    if(uploaded.error){status('upload-status','Upload failed: '+uploaded.error.message);return;}
+    const row={title,uploader:$('uploader')?.value?.trim()||currentUser.email||'Community member',file_name:file.name,file_size:file.size,storage_path:path,user_id:currentUser.id,status:'pending',country};
+    const {error}=await db.from('vpn_submissions').insert(row);
+    if(error){await db.storage.from(FILE_BUCKET).remove([path]);status('upload-status','Could not save submission: '+error.message);return;}
+    event.target.reset(); if($('file-country')) $('file-country').value='Zimbabwe';
+    status('upload-status','Submitted successfully. Your file will appear after administrator approval.');
+    if(isAdmin) await loadPending();
+  }
+
+  async function loadCommunity(){
+    const box=$('community-messages'); if(!box) return;
+    if(!currentUser){box.innerHTML='<p class="muted">Please sign in to view community messages.</p>';return;}
+    const cutoff=new Date(Date.now()-24*60*60*1000).toISOString();
+    const {data,error}=await db.from('community_posts').select('id,user_id,message,created_at').gte('created_at',cutoff).order('created_at',{ascending:false}).limit(100);
+    if(error){box.textContent='Could not load messages: '+error.message;return;}
+    box.innerHTML='';
+    if(!data?.length){box.innerHTML='<p class="muted">No recent messages. Start the conversation.</p>';return;}
+    for(const post of data){
+      const row=document.createElement('article');row.className='file-row';
+      const body=document.createElement('div'); const msg=document.createElement('b');msg.style.whiteSpace='pre-wrap';msg.textContent=post.message;
+      const meta=document.createElement('small');meta.textContent=new Date(post.created_at).toLocaleString();body.append(msg,meta);row.append(body);box.append(row);
+    }
+  }
+
+  async function sendCommunity(event){
+    event.preventDefault();if(!currentUser){status('community-status','Please sign in first.');return;}
+    const input=$('community-message');const message=input?.value?.trim();if(!message)return;
+    status('community-status','Sending…');
+    const {error}=await db.from('community_posts').insert({user_id:currentUser.id,message});
+    if(error){status('community-status',error.message);return;}
+    input.value='';status('community-status','Message sent.');await loadCommunity();
+  }
+
+  async function loadProfile(){
+    if(!currentUser)return;
+    const {data,error}=await db.from('profiles').select('display_name,about,avatar_url').eq('id',currentUser.id).maybeSingle();
+    if(error){status('profile-status',error.message);return;}
+    if(data){if($('profile-name')) $('profile-name').value=data.display_name||'';if($('profile-about')) $('profile-about').value=data.about||'';
+      if($('profile-preview-name')) $('profile-preview-name').textContent=data.display_name||currentUser.email||'Profile';
+      if(data.avatar_url && $('profile-preview')) $('profile-preview').src=data.avatar_url;
+      if($('profile-preview-wrap')) show('profile-preview-wrap',!!data.avatar_url);
+    }
+  }
+
+  async function saveProfile(event){
+    event.preventDefault();if(!currentUser){status('profile-status','Please sign in first.');return;}
+    status('profile-status','Saving profile…');let avatar_url;
+    const avatar=$('profile-avatar')?.files?.[0];
+    if(avatar){if(!avatar.type.startsWith('image/')){status('profile-status','Choose an image file.');return;}
+      const path=`${currentUser.id}/${crypto.randomUUID()}-${avatar.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+      const up=await db.storage.from(AVATAR_BUCKET).upload(path,avatar,{upsert:true});if(up.error){status('profile-status',up.error.message);return;}
+      avatar_url=db.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
+    }
+    const payload={id:currentUser.id,display_name:$('profile-name')?.value?.trim()||'',about:$('profile-about')?.value?.trim()||'',updated_at:new Date().toISOString()};
+    if(avatar_url)payload.avatar_url=avatar_url;
+    const {error}=await db.from('profiles').upsert(payload,{onConflict:'id'});
+    if(error){status('profile-status',error.message);return;}
+    status('profile-status','Profile saved successfully.');await loadProfile();
+  }
+
+  async function loadPending(){
+    const box=$('pending-list');if(!box||!isAdmin)return;
+    status('admin-status','Loading submissions…');
+    const {data,error}=await db.from('vpn_submissions').select('id,title,uploader,file_name,file_size,storage_path,file_path,country,status,created_at').in('status',['pending','approved','rejected']).order('created_at',{ascending:false}).limit(150);
+    if(error){box.textContent='Could not load submissions: '+error.message;status('admin-status',error.message);return;}
+    box.innerHTML='';
+    if(!data?.length){box.innerHTML='<p class="muted">No submissions yet.</p>';status('admin-status','Admin access confirmed.');return;}
+    for(const item of data){
+      const row=document.createElement('article');row.className='file-row';const info=document.createElement('div');
+      const title=document.createElement('b');title.textContent=item.title||item.file_name||'Untitled file';
+      const detail=document.createElement('small');detail.textContent=`${item.file_name||'File'} · ${item.uploader||'Member'} · ${item.country||'Zimbabwe'} · ${item.status}`;info.append(title,detail);
+      const actions=document.createElement('div');actions.className='file-actions';
+      if(item.status==='pending'){
+        for(const [label,next] of [['Approve','approved'],['Reject','rejected']]){const b=document.createElement('button');b.type='button';b.className='outline';b.textContent=label;b.addEventListener('click',()=>changeStatus(item,next));actions.append(b);}
+      }
+      const del=document.createElement('button');del.type='button';del.className='outline';del.textContent='Delete';del.addEventListener('click',()=>deleteFile(item));actions.append(del);
+      row.append(info,actions);box.append(row);
+    }
+    status('admin-status','Admin access confirmed.');
+  }
+
+  async function changeStatus(item,next){
+    if(!isAdmin)return;
+    const {error}=await db.from('vpn_submissions').update({status:next}).eq('id',item.id);
+    if(error){alert('Could not update submission: '+error.message);return;}
+    await loadPending();await loadApprovedFiles();
+  }
+
+  async function deleteFile(item){
+    if(!isAdmin){alert('Only the administrator can delete files.');return;}
+    if(!confirm(`Delete “${item.title||item.file_name||'this file'}” permanently?`))return;
+    const path=item.storage_path||item.file_path;
+    if(path){const removed=await db.storage.from(FILE_BUCKET).remove([path]);if(removed.error){alert('Storage deletion failed: '+removed.error.message);return;}}
+    const {error}=await db.from('vpn_submissions').delete().eq('id',item.id);
+    if(error){alert('Could not delete database record: '+error.message);return;}
+    await loadPending();await loadApprovedFiles();
+  }
+
+  function openAccount(mode='signin'){
+    const modal=$('accountModal');if(!modal){status('upload-status','Please use the sign-in page.');return;}
+    modal.classList.add('show');
+    show('accountSignin',mode!=='signup');show('accountSignup',mode==='signup');
+    if($('tabSignin'))$('tabSignin').className=mode==='signup'?'secondary':'primary';
+    if($('tabSignup'))$('tabSignup').className=mode==='signup'?'primary':'secondary';
+    status('accountStatus','Sign in to download files and use community features.');
+  }
+
+  function bindEvents(){
+    if($('upload-form'))$('upload-form').addEventListener('submit',uploadFile);
+    if($('community-form'))$('community-form').addEventListener('submit',sendCommunity);
+    if($('profile-form'))$('profile-form').addEventListener('submit',saveProfile);
+    if($('refresh'))$('refresh').addEventListener('click',loadApprovedFiles);
+    if($('user-logout'))$('user-logout').addEventListener('click',async()=>{await db.auth.signOut();});
+    // Older page variants may still use the legacy admin login form.
+    if($('login-form'))$('login-form').addEventListener('submit',async e=>{e.preventDefault();status('admin-status','Signing in…');const {error}=await db.auth.signInWithPassword({email:$('admin-email')?.value,password:$('admin-password')?.value});if(error)status('admin-status',error.message);});
+    if($('logout'))$('logout').addEventListener('click',async()=>{await db.auth.signOut();});
+    // The supplied index.html already handles accountSignin/accountSignup inline; do not bind them twice.
+    if($('openSignin'))$('openSignin').addEventListener('click',()=>openAccount(currentUser?'signin':'signin'));
+    if($('heroSignup'))$('heroSignup').addEventListener('click',()=>openAccount('signup'));
+    if($('closeAccount'))$('closeAccount').addEventListener('click',()=>{$('accountModal')?.classList.remove('show');});
+    if($('tabSignin'))$('tabSignin').addEventListener('click',()=>openAccount('signin'));
+    if($('tabSignup'))$('tabSignup').addEventListener('click',()=>openAccount('signup'));
+    if($('searchForm'))$('searchForm').addEventListener('submit',e=>{e.preventDefault();const q=$('hubSearch')?.value?.trim().toLowerCase()||'';let visible=0;document.querySelectorAll('#file-list .file-row').forEach(row=>{const yes=!q||row.textContent.toLowerCase().includes(q);row.classList.toggle('hidden',!yes);if(yes)visible++;});show('search-empty',visible===0);$('files')?.scrollIntoView({behavior:'smooth'});});
+    if($('year'))setText('year',new Date().getFullYear());
+  }
+
+  async function start(){
+    if(!initClient())return;
+    ensureCountryControls();bindEvents();
+    await refreshSession();
+    await loadApprovedFiles();
+    db.auth.onAuthStateChange((_event,session)=>{
+      currentUser=session?.user||null;isAdmin=currentUser?.app_metadata?.role==='admin';
+      updateAuthUI();
+      if(currentUser){loadCommunity();loadProfile();if(isAdmin)loadPending();}
+      else {const box=$('community-messages');if(box)box.innerHTML='<p class="muted">Please sign in to view community messages.</p>';if($('pending-list'))$('pending-list').innerHTML='';}
+      loadApprovedFiles();
+    });
+    // Realtime refresh keeps the chat current while SQL cleanup removes messages after 24 hours.
+    if(currentUser && db.channel){db.channel('naru-community-live').on('postgres_changes',{event:'*',schema:'public',table:'community_posts'},()=>loadCommunity()).subscribe();}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
