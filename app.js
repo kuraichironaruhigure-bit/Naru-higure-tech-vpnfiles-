@@ -21,7 +21,7 @@
   function button(text, attrs='') { return `<button type="button" class="outline" ${attrs}>${text}</button>`; }
   function injectFeatureUI() {
     if ($('naru-extra-features')) return;
-    const main = $('admin')?.parentElement?.parentElement || document.querySelector('main');
+    const main = $('files') || $('admin')?.parentElement?.parentElement || document.querySelector('main');
     if (!main) return;
     const section = document.createElement('section'); section.id = 'naru-extra-features'; section.className = 'section';
     section.innerHTML = `
@@ -42,11 +42,20 @@
           <div class="naru-box"><h3>🟢 Online members</h3><div id="naru-online">Sign in to see members online.</div></div>
           <div class="naru-box"><h3>❓ Help centre / FAQ</h3><div id="naru-help">Loading help articles…</div><div id="naru-help-admin" class="hidden"><input id="naru-help-q" placeholder="FAQ question"><textarea id="naru-help-a" placeholder="Answer"></textarea><button class="primary" id="naru-help-add">Add FAQ</button></div></div>
         </div>
-        <div class="naru-box"><h3>🔎 Advanced file search</h3><div class="naru-row"><input id="naru-search" placeholder="Search file title or uploader"><select id="naru-country"></select><select id="naru-type"><option value="">All file types</option><option>ovpn</option><option>json</option><option>conf</option><option>txt</option><option>npv</option><option>hat</option><option>other</option></select><input id="naru-date" type="date"></div><p class="muted">Filters apply to the VPN file list above.</p></div>
+        <div class="naru-box"><h3>🔎 Advanced file search</h3><div class="naru-row"><input id="naru-search" placeholder="Search file title or uploader"><select id="naru-type"><option value="">All file types</option><option>ovpn</option><option>json</option><option>conf</option><option>txt</option><option>npv</option><option>hat</option><option>other</option></select><input id="naru-date" type="date"></div><p class="muted">Filters apply to the VPN file list above.</p></div>
         <div class="naru-box"><h3>👥 Community replies & reactions</h3><p class="muted">Replies and emoji reactions appear below each community post.</p></div>
         <div id="naru-admin-tools" class="naru-box hidden"><h3>📊 Admin analytics</h3><div id="naru-analytics">Loading analytics…</div><h3>🚩 Content reports</h3><div id="naru-reports">Loading reports…</div><h3>🧾 Admin activity log</h3><div id="naru-logs">Loading activity…</div></div>
       </div>`;
     main.appendChild(section);
+    const filesSection = $('files');
+    const fileList = $('file-list');
+    if (filesSection && fileList && !$('naru-country')) {
+      const countryWrap = document.createElement('div');
+      countryWrap.className = 'panel';
+      countryWrap.style.marginBottom = '12px';
+      countryWrap.innerHTML = '<label for="naru-country" style="display:block;margin:0 0 8px;font-weight:700">Filter VPN files by country</label><select id="naru-country" aria-label="Filter VPN files by country" style="width:100%;padding:13px;background:#09090d;color:white;border:1px solid #ef2638;border-radius:10px"></select>';
+      fileList.parentElement.insertBefore(countryWrap, fileList);
+    }
     const uploadForm = $('upload-form');
     if (uploadForm && !$('file-country')) {
       const label = document.createElement('label'); label.textContent = 'Country';
@@ -85,7 +94,7 @@
     if(error && /country/i.test(error.message)) { const fallback=await sb.from('vpn_submissions').select('id,title,uploader,file_name,file_size,storage_path,file_path,view_count,download_count,created_at,user_id').eq('status','approved').order('created_at',{ascending:false}); data=fallback.data; error=fallback.error; if(data)data=data.map(f=>({...f,country:'Zimbabwe'})); }
     if(error){host.innerHTML=`<p class="muted">Could not load files: ${esc(error.message)}</p>`;return;}
     files=data||[];
-    const countrySel=$('naru-country'); if(countrySel){const opts=[...new Set([...countries,...files.map(f=>f.country||'Zimbabwe')])];countrySel.innerHTML=opts.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');}
+    const countrySel=$('naru-country'); if(countrySel){const previous=countrySel.value||'All countries';const opts=[...new Set([...countries,...files.map(f=>f.country||'Zimbabwe')])];countrySel.innerHTML=opts.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');countrySel.value=opts.includes(previous)?previous:'All countries';}
     renderFiles(); loadTotals();
   }
   function renderFiles() {
@@ -165,6 +174,6 @@
     if($('year'))say('year',new Date().getFullYear());
   }
   async function loadFeatures(){await Promise.all([loadNotifications(),loadSaved(),loadAnnouncements(),loadLeaderboard(),loadHelp()]);if(admin)await Promise.all([loadAnalytics(),loadReports(),loadLogs()]);await loadOnline();}
-  async function sync(){await refreshUser();await loadFiles();await loadAnnouncements();await loadLeaderboard();await loadHelp();if(user){await Promise.all([loadProfile(),loadChat(),loadNotifications(),loadSaved(),heartbeat(),loadOnline()]);startChatRealtime();presenceTimer=setInterval(()=>{heartbeat();loadOnline();},60000);}else{stopChatRealtime();}if(admin){await Promise.all([loadPending(),loadAnalytics(),loadReports(),loadLogs()]);}}
+  async function sync(){if(presenceTimer){clearInterval(presenceTimer);presenceTimer=null;}await refreshUser();await loadFiles();await loadAnnouncements();await loadLeaderboard();await loadHelp();if(user){await Promise.all([loadProfile(),loadChat(),loadNotifications(),loadSaved(),heartbeat(),loadOnline()]);startChatRealtime();presenceTimer=setInterval(()=>{heartbeat();loadOnline();},60000);}else{stopChatRealtime();}if(admin){await Promise.all([loadPending(),loadAnalytics(),loadReports(),loadLogs()]);}}
   document.addEventListener('DOMContentLoaded',()=>{injectFeatureUI();bind();sync();sb.auth.onAuthStateChange((_event,session)=>{user=session?.user||null;admin=!!user&&user.email?.toLowerCase()===ADMIN_EMAIL&&user.app_metadata?.role==='admin';setAccess();setTimeout(()=>sync(),0);});});
 })();

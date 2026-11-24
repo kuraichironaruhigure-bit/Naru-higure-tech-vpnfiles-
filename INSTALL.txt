@@ -1,39 +1,23 @@
-NARU HIGURE TECH VPN FILES — PWA FILES
+NARU HIGURE FILE HUB — UPDATE PACKAGE
 
-1) In your GitHub repository, upload these items into the repository ROOT (same folder as index.html):
-   - manifest.json
-   - sw.js
-   - the whole icons folder
+CONTENTS
+- index.html: the current hub page, preserving its black/red design and existing sections.
+- app.js: Supabase-powered file hub logic, country filtering/upload selection, community and feature tools.
+- naru-higure-feature-upgrade.sql: additive database changes, including country column/index and admin role assignment.
 
-2) In index.html, add these lines INSIDE the <head> section:
-   <link rel="manifest" href="/Naru-higure-tech-vpnfiles-/manifest.json">
-   <meta name="theme-color" content="#080808">
-   <meta name="apple-mobile-web-app-capable" content="yes">
-   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-   <link rel="apple-touch-icon" href="/Naru-higure-tech-vpnfiles-/icons/icon-192.png">
+INSTALL
+1. Make a backup of the current GitHub repository before replacing files.
+2. In the repository root, replace index.html with this package's index.html.
+3. In the repository root, replace app.js with this package's app.js.
+4. In Supabase Dashboard > SQL Editor, run naru-higure-feature-upgrade.sql.
+5. Confirm the owner account kuraichironaruhigure@gmail.com already exists in Supabase Authentication before running the SQL admin-role update. After running it, sign out and sign in again so the refreshed JWT contains the admin role.
+6. Confirm the Supabase project already has the original base tables (vpn_submissions, profiles, community_posts), the vpn-files storage bucket, and the original RPC functions record_file_view and record_file_download. This feature upgrade is additive and is not a replacement for the original base setup.
+7. Commit the two website files to the repository root and wait for GitHub Pages to publish.
+8. Open the site and hard-refresh/reload it. Test sign-in, file list, country filter, upload-country selector, and admin approval.
 
-3) Add this script just BEFORE the closing </body> tag in index.html:
-   <script>
-     if ('serviceWorker' in navigator) {
-       window.addEventListener('load', () => {
-         navigator.serviceWorker.register('/Naru-higure-tech-vpnfiles-/sw.js')
-           .catch(error => console.error('Service worker registration failed:', error));
-       });
-     }
-   </script>
-
-4) Commit the changes to the main branch and wait for GitHub Pages to publish.
-
-5) Test these URLs in Chrome. Each should open without a 404:
-   https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/manifest.json
-   https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/sw.js
-   https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/icons/icon-192.png
-   https://kuraichironaruhigure-bit.github.io/Naru-higure-tech-vpnfiles-/icons/icon-512.png
-
-6) Paste the main website URL into https://www.pwabuilder.com/ again.
-
-IMPORTANT:
-- Do not replace your existing index.html with these files. They are additions plus small snippets.
-- Keep your existing Supabase login and database code unchanged.
-- The service worker deliberately does not cache Supabase requests or private VPN files.
-- This makes a PWA installable; PWABuilder still needs to validate the site and generate the Android package.
+IMPORTANT
+- This package does not contain or expose a Supabase service-role key.
+- Country dropdown choices are populated locally by app.js; uploaded file country values are saved to the country column.
+- Community messages older than 24 hours are filtered out by the current app code; this SQL does not schedule physical deletion.
+- Some features depend on the base database schema, storage policies, and RPC functions already being correctly configured. A ZIP cannot verify your live Supabase policies or deploy to GitHub on your behalf.
+- Back up the live site and database before applying updates.
