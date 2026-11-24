@@ -1,39 +1,292 @@
-(() => {
-  "use strict";
-  const SUPABASE_URL = "https://vmiihzuzdiheyrhmpcor.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov";
-  const ADMIN_EMAIL = "kuraichironaruhigure@gmail.com";
-  const FILE_BUCKET = "vpn-files";
-  const AVATAR_BUCKET = "profile-avatars";
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  window.naruSupabase = sb;
-  const $ = id => document.getElementById(id);
-  const say = (id, message) => { const el = $(id); if (el) el.textContent = message || ""; };
-  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const COUNTRIES = [
-    "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan",
-    "Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi",
-    "Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo","Costa Rica","Côte d’Ivoire","Croatia","Cuba","Cyprus","Czechia",
-    "Democratic Republic of the Congo","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia",
-    "Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary",
-    "Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan",
-    "Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar",
-    "Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Palestine","Pakistan","Palau","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar",
-    "Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria",
-    "Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Türkiye","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
-  ];
-  let currentUser = null, adminMode = false, filesCache = [], chatChannel = null;
 
-  function fillCountryMenus() {
-    const filter = $("country-filter"), uploadCountry = $("file-country");
-    if (filter) filter.innerHTML = '<option value="All">All countries</option><option value="Other">Other / Not assigned</option>' + COUNTRIES.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
-    if (uploadCountry) uploadCountry.innerHTML = '<option value="">Select the file\'s country</option>' + COUNTRIES.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+// Naru Higure Hub X — Supabase file sharing and administrator review.
+// Uses the public publishable key only. Never place a service-role key in a website.
+
+const SUPABASE_URL = "https://vmiihzuzdiheyrhmpcor.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_gwSGws_4eY2lbP4fsnHUqw_EoVMnTov";
+const BUCKET = "vpn-files";
+
+const configured =
+  SUPABASE_URL.startsWith("https://") &&
+  !SUPABASE_ANON_KEY.includes("PASTE_");
+
+const db =
+  configured && window.supabase
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+
+window.naruSupabase = db;
+
+const $ = id => document.getElementById(id);
+
+// Prevent duplicate view counts during the same page visit.
+const recordedFileViews = new Set();
+
+async function recordAutomaticFileView(fileId) {
+  if (!db || !fileId || recordedFileViews.has(fileId)) return;
+
+  recordedFileViews.add(fileId);
+
+  const { error } = await db.rpc("record_file_view", {
+    file_id: fileId
+  });
+
+  if (error) {
+    recordedFileViews.delete(fileId);
+    console.warn("Could not record automatic file view:", error.message);
+  }
+}
+
+$("year").textContent = new Date().getFullYear();
+
+function configMessage() {
+  return "Supabase could not be reached. Check your internet connection and project settings.";
+}
+
+// LOAD APPROVED FILES
+async function loadApproved() {
+  const box = $("file-list");
+
+  if (!db) {
+    box.innerHTML = `<p class="muted">${configMessage()}</p>`;
+    return;
   }
 
-  function renderFiles() {
-    const host = $("file-list"); if (!host) return;
-    const selected = $("country-filter")?.value || "All";
-    const visible = filesCache.filter(file => selected === "All" || file.country === selected);
+  const { data, error } = await db
+    .from("vpn_submissions")
+    .select("id,title,uploader,file_name,storage_path,created_at")
+    .eq("status", "approved")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    box.textContent = "Could not load files: " + error.message;
+    return;
+  }
+
+  box.innerHTML = "";
+
+  if (!data.length) {
+    box.innerHTML = '<p class="muted">No approved files yet.</p>';
+    return;
+  }
+
+  for (const item of data) {
+    const row = document.createElement("div");
+    row.className = "file-row";
+
+    const info = document.createElement("div");
+    info.innerHTML = "<b></b><small></small>";
+
+    info.querySelector("b").textContent = item.title;
+
+    info.querySelector("small").textContent =
+      `${item.file_name} • ${item.uploader || "Community member"}`;
+
+    // DOWNLOAD BUTTON ONLY — NO VIEW BUTTON.
+    const btn = document.createElement("button");
+    btn.className = "outline";
+    btn.textContent = "Download";
+
+    btn.onclick = async () => {
+      const { data, error } = await db.storage
+        .from(BUCKET)
+        .createSignedUrl(item.storage_path, 60);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      window.open(data.signedUrl, "_blank", "noopener");
+    };
+
+    row.append(info, btn);
+    box.append(row);
+
+    // AUTOMATIC VIEW COUNT:
+    // A view is recorded when the approved file is displayed.
+    // No button or visitor click is required.
+    void recordAutomaticFileView(item.id);
+  }
+}
+
+// FILE UPLOAD
+$("upload-form").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const status = $("upload-status");
+
+  if (!db) {
+    status.textContent = configMessage();
+    return;
+  }
+
+  const file = $("file").files[0];
+
+  if (!file) {
+    status.textContent = "Please choose a file.";
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    status.textContent = "Please choose a file smaller than 10 MB.";
+    return;
+  }
+
+  status.textContent = "Uploading for review…";
+
+  const path =
+    `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+
+  const up = await db.storage
+    .from(BUCKET)
+    .upload(path, file, { upsert: false });
+
+  if (up.error) {
+    status.textContent = up.error.message;
+    return;
+  }
+
+  const { error } = await db
+    .from("vpn_submissions")
+    .insert({
+      title: $("title").value.trim(),
+      uploader: $("uploader").value.trim(),
+      file_name: file.name,
+      storage_path: path,
+      status: "pending"
+    });
+
+  if (error) {
+    await db.storage.from(BUCKET).remove([path]);
+    status.textContent = error.message;
+    return;
+  }
+
+  status.textContent =
+    "Submitted. It will appear after administrator approval.";
+
+  e.target.reset();
+});
+
+// REFRESH FILES
+$("refresh").onclick = loadApproved;
+
+// ADMIN LOGIN
+$("login-form").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const status = $("admin-status");
+
+  if (!db) {
+    status.textContent = configMessage();
+    return;
+  }
+
+  const { data, error } = await db.auth.signInWithPassword({
+    email: $("admin-email").value,
+    password: $("admin-password").value
+  });
+
+  if (error) {
+    status.textContent = error.message;
+    return;
+  }
+
+  if (data.user?.app_metadata?.role !== "admin") {
+    await db.auth.signOut();
+    status.textContent = "This account is not an administrator.";
+    return;
+  }
+
+  status.textContent = "Administrator signed in.";
+
+  $("logout").classList.remove("hidden");
+
+  await loadPending();
+});
+
+// ADMIN LOGOUT
+$("logout").onclick = async () => {
+  await db?.auth.signOut();
+
+  $("logout").classList.add("hidden");
+  $("pending-list").innerHTML = "";
+  $("admin-status").textContent = "Signed out.";
+};
+
+// LOAD PENDING SUBMISSIONS
+async function loadPending() {
+  const box = $("pending-list");
+
+  const { data, error } = await db
+    .from("vpn_submissions")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at");
+
+  if (error) {
+    box.textContent = error.message;
+    return;
+  }
+
+  box.innerHTML = "<h3>Pending submissions</h3>";
+
+  if (!data.length) {
+    box.innerHTML +=
+      "<p class='muted'>Nothing waiting for review.</p>";
+    return;
+  }
+
+  for (const item of data) {
+    const row = document.createElement("div");
+    row.className = "file-row";
+
+    const info = document.createElement("div");
+    info.innerHTML = "<b></b><small></small>";
+
+    info.querySelector("b").textContent = item.title;
+
+    info.querySelector("small").textContent =
+      `${item.file_name} • ${item.uploader || "No name"}`;
+
+    const actions = document.createElement("div");
+    actions.className = "file-actions";
+
+    for (const [label, status] of [
+      ["Approve", "approved"],
+      ["Reject", "rejected"]
+    ]) {
+      const b = document.createElement("button");
+
+      b.className = "outline";
+      b.textContent = label;
+
+      b.onclick = async () => {
+        const { error } = await db
+          .from("vpn_submissions")
+          .update({ status })
+          .eq("id", item.id);
+
+        if (error) {
+          alert(error.message);
+        } else {
+          await loadPending();
+          await loadApproved();
+        }
+      };
+
+      actions.append(b);
+    }
+
+    row.append(info, actions);
+    box.append(row);
+  }
+}
+
+// INITIAL FILE LOAD
+loadApproved();
+
     if (!visible.length) { host.innerHTML = `<p class="muted">${filesCache.length ? "No approved files for this country yet." : "No approved files yet."}</p>`; return; }
     host.innerHTML = visible.map(f => `
       <article class="file-row" data-file-id="${esc(f.id)}"><div class="file-info"><b>${esc(f.title)}</b>
